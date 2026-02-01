@@ -4,28 +4,34 @@ using namespace KamataEngine;
 
 // 初期化
 void GameScene::Initialize() {
-	textureHandle_ = TextureManager::Load("uvChecker.png");
-	sprite_ = Sprite::Create(textureHandle_, {100.0f, 50.0f});
+	// 描画
+	textureHandle = TextureManager::Load("cube/cube.jpg");
+	model_ = Model::Create();
+
+	// ワールドトランスフォームの初期化
+	worldTransform_.Initialize();
+
+	// カメラの初期化
+	camera_.Initialize();
+
 }
 
 // 更新
-void GameScene::Update() { 
-	Vector2 position = sprite_->GetPosition();
-
-	position.x += 2.0f;
-	position.y += 1.0f;
-
-	sprite_->SetPosition(position);
-}
+void GameScene::Update() {}
 
 // 描画
 void GameScene::Draw() {
-	Sprite::PreDraw();
-	sprite_->Draw();
-	Sprite::PostDraw();
+
+	Model::PreDraw();
+	model_->Draw(worldTransform_, camera_, textureHandle);
+	Model::PostDraw();
+
+
+
 }
 
 // デストラクタ
-GameScene::~GameScene() { 
-	delete sprite_; 
+GameScene::~GameScene() {
+
+	delete model_;
 }
