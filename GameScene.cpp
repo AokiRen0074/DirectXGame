@@ -12,6 +12,11 @@ void GameScene::Initialize() {
 	camera_.Initialize();
 	debugCamera_ = new DebugCamera(1280, 720);
 
+	// 軸方向の表示を有効
+	AxisIndicator::GetInstance()->SetVisible(true);
+
+	// 軸方向表示が参照するビュープロジェクションを指定する
+	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 
 }
 
