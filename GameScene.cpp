@@ -10,6 +10,7 @@ void GameScene::Initialize() {
 	voiceHandle_ = Audio::GetInstance()->PlayWave(soundDataHandle_,true);
 }
 
+
 // 更新
 void GameScene::Update() {
 
