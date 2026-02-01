@@ -13,4 +13,8 @@ public:
 
 	// 描画
 	void Draw();
+
+	private:
+	uint32_t soundDataHandle_;
+	    uint32_t voiceHandle_;
 };
