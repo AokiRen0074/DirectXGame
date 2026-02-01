@@ -13,4 +13,8 @@ public:
 
 	// 描画
 	void Draw();
+
+	private:
+	// カメラ
+	 KamataEngine::Camera camera_;
 };
