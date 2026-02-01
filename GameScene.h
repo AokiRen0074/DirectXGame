@@ -13,4 +13,16 @@ public:
 
 	// 描画
 	void Draw();
+
+	// デストラクタ
+	~GameScene();
+
+	private:
+	KamataEngine::DebugCamera* debugCamera_ = nullptr;
+
+	// モデル
+	uint32_t textureHandle_ = 0;
+	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::WorldTransform worldTransform_;
+	KamataEngine::Camera camera_;
 };
