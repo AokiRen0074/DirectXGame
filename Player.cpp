@@ -15,5 +15,6 @@ void Player::Update() {
 	worldTransform_.TransferMatrix();
 }
 
-void Player::Draw() { model_->Draw(worldTransform_, *camera_, textureHandle_);
+void Player::Draw() {
+	model_->Draw(worldTransform_, *camera_, textureHandle_);
 }
