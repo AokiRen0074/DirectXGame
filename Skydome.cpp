@@ -10,7 +10,8 @@ void Skydome::Initialize() {
 	worldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
 }
 
-void Skydome::Update() {}
+void Skydome::Update() {
+}
 
 void Skydome::Draw() {
 	if (!camera_)

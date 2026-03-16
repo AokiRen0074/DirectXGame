@@ -1,9 +1,10 @@
 #include "GameScene.h"
 #include "Skydome.h"
+#include "WorldTransform.h"
 
 using namespace KamataEngine;
 
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
+static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 result = {};
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
@@ -39,26 +40,36 @@ GameScene::~GameScene() {
 // 初期化
 void GameScene::Initialize() {
 
+	/*-------------------------------
+	天球
+	-------------------------------*/
 	skydome_ = std::make_unique<Skydome>();
 	skydome_->camera_ = &camera_;
 	skydome_->Initialize();
 	modelSkydome_ = Model::CreateFromOBJ("skydome", true); 
 
-
-	Model* model = Model::CreateFromOBJ("cube", true);
-	uint32_t textureHandle = TextureManager::Load("uvChecker.png");
+	/*--------------------
+	プレイヤー
+	-------------------------*/
+	Model* playerModel = Model::CreateFromOBJ("player", true);
 	camera_.Initialize();
-	camera_.translation_ = {18.0f, 0.0f, -60.0f};
+	camera_.farZ = 2000.0f;
+	camera_.translation_ = {18.0f, 0.0f, -50.0f};
 	player_ = new Player();
 
-	player_->Initialize(model, textureHandle, &camera_);
 
-	// 5-2
-	textureHandle_ = TextureManager::Load("cube./cube.jpg");
-	model_ = Model::Create();
+
+	player_->Initialize(playerModel,0, &camera_);
+	player_->worldTransform_.translation_ = {1.0f, 0.0f, 0.0f};
+
+
+	// 5-0
+
+	model_ = Model::CreateFromOBJ("block", true);
 
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
+	debugCamera_->SetFarZ(2000.0f);
 
 	// 要素数
 	const uint32_t kNumBlockVirtical = 10;
@@ -129,16 +140,7 @@ void GameScene::Update() {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock)
 				continue;
-			Matrix4x4 matScale = KamataEngine::MathUtility::MakeScaleMatrix(worldTransformBlock->scale_);
-			Matrix4x4 matRotX = KamataEngine::MathUtility::MakeRotateXMatrix(worldTransformBlock->rotation_.x);
-			Matrix4x4 matRotY = KamataEngine::MathUtility::MakeRotateYMatrix(worldTransformBlock->rotation_.y);
-			Matrix4x4 matRotZ = KamataEngine::MathUtility::MakeRotateZMatrix(worldTransformBlock->rotation_.z);
-			Matrix4x4 matTrans = KamataEngine::MathUtility::MakeTranslateMatrix(worldTransformBlock->translation_);
-
-			Matrix4x4 matRot = Multiply(matRotZ, Multiply(matRotX, matRotY));
-			worldTransformBlock->matWorld_ = Multiply(matScale, Multiply(matRot, matTrans));
-
-			worldTransformBlock->TransferMatrix();
+			UpdateWorldTransform(*worldTransformBlock);
 		}
 	}
 
