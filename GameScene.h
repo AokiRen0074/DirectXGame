@@ -1,14 +1,30 @@
 #pragma once
 #include "KamataEngine.h"
 #include "Player.h"
+#include <vector>
 
 // ゲームシーン
 class GameScene {
 public:
-
 	Player* player_ = nullptr;
-	KamataEngine::Camera camera_; 
+	KamataEngine::Camera camera_;
 
+	GameScene() = default; 
+	~GameScene();
+
+private:
+	// テクスチャハンドル
+	uint32_t textureHandle_ = 0;
+	
+	// 3dモデル
+	KamataEngine::Model* model_ = nullptr;
+
+	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+
+	bool isDebugCameraActive_ = false;
+	KamataEngine::DebugCamera* debugCamera_ = nullptr;
+
+	public:
 	// 初期化
 	void Initialize();
 
