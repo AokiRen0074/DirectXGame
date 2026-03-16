@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include "Skydome.h"
 
 using namespace KamataEngine;
 
@@ -20,6 +21,7 @@ GameScene::~GameScene() {
 
 	delete model_;
 	delete debugCamera_;
+	delete modelSkydome_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -36,6 +38,13 @@ GameScene::~GameScene() {
 
 // 初期化
 void GameScene::Initialize() {
+
+	skydome_ = std::make_unique<Skydome>();
+	skydome_->camera_ = &camera_;
+	skydome_->Initialize();
+	modelSkydome_ = Model::CreateFromOBJ("skydome", true); 
+
+
 	Model* model = Model::CreateFromOBJ("cube", true);
 	uint32_t textureHandle = TextureManager::Load("uvChecker.png");
 	camera_.Initialize();
@@ -78,6 +87,9 @@ void GameScene::Initialize() {
 			}
 		}
 	}
+
+
+
 }
 
 // 更新
@@ -129,10 +141,19 @@ void GameScene::Update() {
 			worldTransformBlock->TransferMatrix();
 		}
 	}
+
+	// 5-3
+	skydome_->Update();
 }
 
 // 描画
 void GameScene::Draw() {
+	if (skydome_) {
+		skydome_->Draw();
+	}
+
+
+
 	if (player_ != nullptr) {
 		player_->Draw();
 	}
