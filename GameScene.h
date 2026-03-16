@@ -4,12 +4,14 @@
 #include <vector>
 #include "Skydome.h"
 #include <memory>
+#include "MapChipField.h"
 
 // ゲームシーン
 class GameScene {
 public:
 	Player* player_ = nullptr;
 	KamataEngine::Camera camera_;
+	MapChipField* mapChipField_;
 
 	GameScene() = default; 
 	~GameScene();
@@ -40,4 +42,6 @@ private:
 
 	// 描画
 	void Draw();
+
+	void GenerateBlocks();
 };
