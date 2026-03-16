@@ -60,7 +60,8 @@ void GameScene::Initialize() {
 
 
 	player_->Initialize(playerModel,0, &camera_);
-	player_->worldTransform_.translation_ = {1.0f, 0.0f, 0.0f};
+	player_->worldTransform_.translation_ = {2.0f, 0.0f, 0.0f};
+	player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
 
 
 	// 5-0
@@ -91,6 +92,7 @@ void GameScene::Initialize() {
 			if ((i + j) % 2 == 0) {
 				worldTransformBlocks_[i][j] = new WorldTransform();
 				worldTransformBlocks_[i][j]->Initialize();
+				worldTransformBlocks_[i][j]->scale_ = {2.0f, 2.0f, 2.0f};
 				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
 				worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
 			} else {
