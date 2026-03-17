@@ -1,21 +1,49 @@
 #pragma once
 #include "KamataEngine.h"
 
+class MapChipField;
+
 class Player {
 public:
-	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera,const KamataEngine::Vector3& position);
-
-	void Update();
-
-	void Draw();
-
-	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; };
 
 	enum class LRDirection {
 		kRight,
 		kLeft,
 	};
 
+
+	struct CollisionMapInfo {
+		bool isCeiling = false;        
+		bool isGround = false;           
+		bool isWall = false;             
+		KamataEngine::Vector3 moveAmount = {};
+	};
+
+	enum Corner {
+		kRightBottom,
+		kLeftBottom,
+		kRightTop,
+		kLeftTop,
+
+		kNumCorner
+	};
+
+	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+
+	void Update();
+
+	void Draw();
+
+	void InputMove();
+
+	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
+	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; };
+
+
+	KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& center, Corner corner);
+
+	
 	LRDirection lrDirection_ = LRDirection::kRight;
 
 	KamataEngine::WorldTransform worldTransform_;
@@ -29,17 +57,33 @@ public:
 
 	const KamataEngine::Vector3& GetVelocity() const { return velocity_; };
 
-
 	// 接地状態フラグ
 	bool onGround_ = true;
 	// 重力加速度
 	static inline const float kGravityAcceleration = 0.01f;
 	// 最大落下速度
-	static inline const float kLimitFallSpeed =0.5f;
+	static inline const float kLimitFallSpeed = 0.5f;
 	// ジャンプ初速
 	static inline const float kJumpAcceleration = 0.3f;
 
+	// キャラクターの当たり判定サイズ
+	static inline const float kWidth = 0.8f;
+	static inline const float kHeight = 0.8f;
+
+	static inline const float kBlank = 0.001f;
+
+	// 当たり判定
+	void CheckMapCollision(CollisionMapInfo& info);
+	void CheckMapCollisionUp(CollisionMapInfo& info);   
+	void CheckMapCollisionDown(CollisionMapInfo& info); 
+	void CheckMapCollisionRight(CollisionMapInfo& info);
+	void CheckMapCollisionLeft(CollisionMapInfo& info);
+	void CheckCeilingCollision(const CollisionMapInfo& info);
+
+private:
+	// マップチップによるフィールド
+	MapChipField* mapChipField_ = nullptr;
 
 
-	//uint32_t textureHandle_ = 0u;
+	// uint32_t textureHandle_ = 0u;
 };

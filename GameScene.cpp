@@ -69,6 +69,7 @@ void GameScene::Initialize() {
 	player_->Initialize(playerModel, &camera_,playerPosition);
 	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
 	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
+	player_->SetMapChipField(mapChipField_);
 
 	/*--------------------
 	追従カメラ

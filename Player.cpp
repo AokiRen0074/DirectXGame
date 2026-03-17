@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "KamataEngine.h"
 #include "WorldTransform.h"
+#include "MapChipField.h"
 #include <algorithm>
 #include <cassert>
 #include <numbers>
@@ -20,6 +21,9 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	return result;
 }
 
+/*-----------------------------------
+初期化
+---------------------------------*/
 void Player::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position) {
 	assert(model);
 	model_ = model;
@@ -31,8 +35,11 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera
 	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
 }
 
-void Player::Update() {
 
+/*-----------------------------------
+移動処理をまとめた関数
+-----------------------------------*/
+void Player::InputMove() {
 	// 移動入力
 	// 左右移動操作
 	if (onGround_) {
@@ -68,31 +75,133 @@ void Player::Update() {
 				acceleration.x -= kAcceleration;
 			}
 
-			
-
-
 			velocity_.x += acceleration.x;
 			velocity_.y += acceleration.y;
 			velocity_.z += acceleration.z;
 
 			// 最大速度制限
 			velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
-			
-			
+
 		} else {
 			velocity_.x *= (1.0f - kAttenuation);
-
-			
-
 		}
 	} else {
-	// 落下速度
+		// 落下速度
 		velocity_.y += -kGravityAcceleration;
-	velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
-	
+		velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
 	}
 
 
+}
+
+/*-----------------------------------
+マップの衝突判定　各判定の当たり判定
+-----------------------------------*/
+
+void Player::CheckMapCollision(CollisionMapInfo& info) {
+	CheckMapCollisionUp(info);
+	CheckMapCollisionDown(info);
+	CheckMapCollisionRight(info);
+	CheckMapCollisionLeft(info);
+}
+
+//　上方向
+void Player::CheckMapCollisionUp(CollisionMapInfo& info) {
+
+if (info.moveAmount.y <= 0) {
+		return;
+	}
+
+
+	std::array<Vector3, kNumCorner> positionsNew;
+
+	for (uint32_t i = 0; i < positionsNew.size(); ++i) {
+		Vector3 expectedPos = {worldTransform_.translation_.x + info.moveAmount.x, worldTransform_.translation_.y + info.moveAmount.y, worldTransform_.translation_.z + info.moveAmount.z};
+		positionsNew[i] = CornerPosition(expectedPos, static_cast<Corner>(i));
+	}
+
+	bool hit = false;
+	MapChipType mapChipType;
+	MapChipField::IndexSet indexSet;
+
+	
+	indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[static_cast<uint32_t>(kLeftTop)]);
+	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
+		hit = true;
+	}
+
+	indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[static_cast<uint32_t>(kRightTop)]);
+	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
+		hit = true;
+	}
+
+	if (hit) {
+		indexSet = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[static_cast<uint32_t>(kLeftTop)]);
+		MapChipField::Rect rect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
+		info.moveAmount.y = (rect.bottom - worldTransform_.translation_.y) - (kHeight / 2.0f + kBlank);
+		info.moveAmount.y = std::max(0.0f, info.moveAmount.y);
+		info.isCeiling = true;
+	}
+
+}
+
+
+
+
+void Player::CheckMapCollisionDown(CollisionMapInfo& /* info*/) {}
+void Player::CheckMapCollisionRight(CollisionMapInfo& /* info*/) {}
+void Player::CheckMapCollisionLeft(CollisionMapInfo& /* info*/) {}
+
+void Player::CheckCeilingCollision(const CollisionMapInfo& info) {
+	if (info.isCeiling) {
+		DebugText::GetInstance()->ConsolePrintf("hit ceiling\n");
+		velocity_.y = 0.0f;
+	}
+}
+
+
+
+/*---------------------------
+4角の座標
+---------------------------*/
+Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
+	Vector3 offsetTable[kNumCorner] = {
+	    {+kWidth / 2.0f, -kHeight / 2.0f, 0.0f}, 
+	    {-kWidth / 2.0f, -kHeight / 2.0f, 0.0f},
+	    {+kWidth / 2.0f, +kHeight / 2.0f, 0.0f}, 
+	    {-kWidth / 2.0f, +kHeight / 2.0f, 0.0f} 
+	};
+
+	
+	Vector3 offset = offsetTable[static_cast<uint32_t>(corner)];
+
+	Vector3 result;
+	result.x = center.x + offset.x;
+	result.y = center.y + offset.y;
+	result.z = center.z + offset.z;
+
+	return result;
+}
+
+/*-------------------------------------
+更新
+--------------------------------*/
+void Player::Update() {
+
+	InputMove();
+
+
+	CollisionMapInfo collisionMapInfo;      
+	collisionMapInfo.moveAmount = velocity_; 
+	
+	CheckMapCollision(collisionMapInfo);
+
+	velocity_ = collisionMapInfo.moveAmount;
+
+	CheckCeilingCollision(collisionMapInfo);
+	
 	// 着地フラグ
 	bool landing = false;
 
@@ -136,4 +245,10 @@ void Player::Update() {
 	UpdateWorldTransform(worldTransform_);
 }
 
-void Player::Draw() { model_->Draw(worldTransform_, *camera_); }
+/*--------------------
+描画
+--------------------*/
+void Player::Draw() { 
+	model_->Draw(worldTransform_, *camera_); 
+}
+
