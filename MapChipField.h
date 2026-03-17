@@ -26,8 +26,8 @@ public:
 	static inline const float kBlockWidth = 1.0f;
 	static inline const float kBlockHeight = 1.0f;
 	// ブロックの個数
-	static inline const uint32_t kNumBlockVirtical = 12;
-	static inline const uint32_t kNumBlockHorizontal = 20;
+	static inline const uint32_t kNumBlockVirtical = 13;
+	static inline const uint32_t kNumBlockHorizontal = 83;
 
 	MapChipData mapChipData_;
 	MapChipType GetMapChipTypeByIndex(uint32_t xIndex, uint32_t yIndex);

@@ -2,6 +2,7 @@
 #include "Skydome.h"
 #include "WorldTransform.h"
 
+
 using namespace KamataEngine;
 
 static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
@@ -24,6 +25,7 @@ GameScene::~GameScene() {
 	delete debugCamera_;
 	delete modelSkydome_;
 	delete mapChipField_;
+	delete cameraController_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -68,7 +70,17 @@ void GameScene::Initialize() {
 	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
 	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
 
+	/*--------------------
+	追従カメラ
+	-------------------------*/
+	cameraController_ = new CameraController();
+	cameraController_->Initialize();
+	cameraController_->SetTarget(player_);
 
+	CameraController::Rect cameraArea = {10.2f, 100.0f, 6.0f, 100.0f}; 
+	cameraController_->SetMovableArea(cameraArea);
+
+	cameraController_->Reset();
 	
 
 
@@ -128,6 +140,10 @@ void GameScene::Update() {
 		player_->Update();
 	}
 
+	if (cameraController_ != nullptr) {
+		cameraController_->Update();
+	}
+
 	// 5-2
 
 	debugCamera_->Update();
@@ -149,7 +165,11 @@ void GameScene::Update() {
 		// 行列を転送して反映させる
 		camera_.TransferMatrix();
 	} else {
-		camera_.UpdateMatrix();
+		camera_.matView = cameraController_->GetCamera().matView;
+		camera_.matProjection = cameraController_->GetCamera().matProjection;
+
+		// 行列を転送して反映させる
+		camera_.TransferMatrix();
 	}
 
 

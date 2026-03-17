@@ -9,6 +9,8 @@ public:
 
 	void Draw();
 
+	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; };
+
 	enum class LRDirection {
 		kRight,
 		kLeft,
@@ -25,6 +27,9 @@ public:
 	static inline const float kAttenuation = 0.05f;
 	static inline const float kLimitRunSpeed = 0.3f;
 
+	const KamataEngine::Vector3& GetVelocity() const { return velocity_; };
+
+
 	// 接地状態フラグ
 	bool onGround_ = true;
 	// 重力加速度
@@ -33,6 +38,8 @@ public:
 	static inline const float kLimitFallSpeed =0.5f;
 	// ジャンプ初速
 	static inline const float kJumpAcceleration = 0.3f;
+
+
 
 	//uint32_t textureHandle_ = 0u;
 };

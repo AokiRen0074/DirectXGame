@@ -2,6 +2,7 @@
 #include "MapChipField.h"
 #include <fstream>
 #include <sstream>
+#include <cassert>
 
 using namespace KamataEngine;
 
