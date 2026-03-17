@@ -41,6 +41,12 @@ GameScene::~GameScene() {
 // 初期化
 void GameScene::Initialize() {
 
+	/*---------------------------
+	マップチップ
+	------------------------------*/
+	mapChipField_ = new MapChipField;
+	mapChipField_->LoadMapChipCsv("Resources/Stage.csv");
+
 	/*-------------------------------
 	天球
 	-------------------------------*/
@@ -57,17 +63,13 @@ void GameScene::Initialize() {
 	camera_.farZ = 2000.0f;
 	camera_.translation_ = {0.0f, 0.0f, -50.0f};
 	player_ = new Player();
-
-	player_->Initialize(playerModel,0, &camera_);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 0);
+	player_->Initialize(playerModel, &camera_,playerPosition);
 	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
 	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
 
 
-	/*---------------------------
-	マップチップ
-	------------------------------*/
-	mapChipField_ = new MapChipField;
-	mapChipField_->LoadMapChipCsv("Resources/Stage.csv");
+	
 
 
 
