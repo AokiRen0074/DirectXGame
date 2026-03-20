@@ -1,6 +1,7 @@
 #include "GameScene.h"
 #include "Skydome.h"
 #include "WorldTransform.h"
+#include "Enemy.h"
 
 
 using namespace KamataEngine;
@@ -20,6 +21,7 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 // デストラクタ
 GameScene::~GameScene() {
 	delete player_;
+	delete enemy_;
 
 	delete model_;
 	delete debugCamera_;
@@ -70,6 +72,14 @@ void GameScene::Initialize() {
 	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
 	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
 	player_->SetMapChipField(mapChipField_);
+
+	/*-----------------------
+	エネミー
+	-----------------------------*/
+	Model* enemyModel = Model::CreateFromOBJ("enemy", true); // ※モデル名は環境に合わせて変更してください
+	enemy_ = new Enemy();
+	enemy_->Initialize(enemyModel, &camera_, {15.0f, 1.0f, 0.0f});
+
 
 	/*--------------------
 	追従カメラ
@@ -145,6 +155,10 @@ void GameScene::Update() {
 		cameraController_->Update();
 	}
 
+	if (enemy_ != nullptr) {
+		enemy_->Update();
+	}
+
 	// 5-2
 
 	debugCamera_->Update();
@@ -196,6 +210,10 @@ void GameScene::Draw() {
 
 	if (player_ != nullptr) {
 		player_->Draw();
+	}
+
+	if (enemy_ != nullptr) {
+		enemy_->Draw();
 	}
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {

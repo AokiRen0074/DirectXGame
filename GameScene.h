@@ -7,10 +7,13 @@
 #include "MapChipField.h"
 #include "CameraControll.h"
 
+class Enemy;
+
 // ゲームシーン
 class GameScene {
 public:
 	Player* player_ = nullptr;
+	Enemy* enemy_ = nullptr;
 	KamataEngine::Camera camera_;
 	MapChipField* mapChipField_;
 	CameraController* cameraController_ = nullptr;
