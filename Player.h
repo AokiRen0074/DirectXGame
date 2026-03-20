@@ -72,13 +72,24 @@ public:
 
 	static inline const float kBlank = 0.001f;
 
+	// 着地時の速度減衰率
+	static inline const float kAttenuationLanding = 0.5f;
+
+	// 壁接触時の速度減衰
+	static inline const float kAttenuationWall = 0.5f;
+
+	// 吸着用
+	static inline const float kGroundSearchHeight = 0.06f;
+
+	// 接地状態の切り替え処理
+	void SwitchOnGround(const CollisionMapInfo& info);
+
 	// 当たり判定
 	void CheckMapCollision(CollisionMapInfo& info);
-	void CheckMapCollisionUp(CollisionMapInfo& info);   
-	void CheckMapCollisionDown(CollisionMapInfo& info); 
-	void CheckMapCollisionRight(CollisionMapInfo& info);
-	void CheckMapCollisionLeft(CollisionMapInfo& info);
 	void CheckCeilingCollision(const CollisionMapInfo& info);
+
+	// 壁に接触している時の当たり判定
+	void CheckWallCollision(const CollisionMapInfo& info);
 
 private:
 	// マップチップによるフィールド
