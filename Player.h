@@ -1,7 +1,9 @@
 #pragma once
 #include "KamataEngine.h"
+#include "AABB.h"
 
 class MapChipField;
+class Enemy;
 
 class Player {
 public:
@@ -37,6 +39,14 @@ public:
 	void InputMove();
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
+	//衝突応答
+	void OnCollision(const Enemy* enemy);
+
+	// ワールド座標を取得
+	KamataEngine::Vector3 GetWorldPosition();
+
+	AABB GetAABB();
 
 	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; };
 

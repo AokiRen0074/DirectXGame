@@ -309,6 +309,49 @@ void Player::SwitchOnGround(const CollisionMapInfo& info) {
 	}
 }
 
+/*-----------------------------
+ ワールド座標を取得
+ -------------------------------*/
+KamataEngine::Vector3 Player::GetWorldPosition() {
+	// ワールド座標を入れる変数
+	KamataEngine::Vector3 worldPos;
+	// ワールド行列の平行移動成分を取得（ワールド座標）
+	worldPos.x = worldTransform_.matWorld_.m[3][0];
+	worldPos.y = worldTransform_.matWorld_.m[3][1];
+	worldPos.z = worldTransform_.matWorld_.m[3][2];
+
+	
+	return worldPos;
+}
+
+/*-------------------------
+AABBを取得
+--------------------------*/
+AABB Player::GetAABB() {
+	KamataEngine::Vector3 worldPos = GetWorldPosition();
+
+	AABB aabb;
+
+	
+	aabb.min = {worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f};
+	
+	aabb.max = {worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f};
+
+	return aabb;
+}
+
+/*-----------------
+衝突応答
+---------------------*/
+
+void Player::OnCollision(const Enemy* enemy) {
+
+	(void)enemy;
+	
+	velocity_.y = kJumpAcceleration;
+	onGround_ = false; // 空中状態にする
+}
+
 /*-------------------------------------
 更新
 --------------------------------*/
@@ -348,5 +391,6 @@ void Player::Update() {
 
 /*--------------------
 描画
+
 --------------------*/
 void Player::Draw() { model_->Draw(worldTransform_, *camera_); }

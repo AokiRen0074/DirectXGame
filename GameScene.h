@@ -6,6 +6,7 @@
 #include <memory>
 #include "MapChipField.h"
 #include "CameraControll.h"
+#include <list>
 
 class Enemy;
 
@@ -13,7 +14,7 @@ class Enemy;
 class GameScene {
 public:
 	Player* player_ = nullptr;
-	Enemy* enemy_ = nullptr;
+	std::list<Enemy*> enemies_;
 	KamataEngine::Camera camera_;
 	MapChipField* mapChipField_;
 	CameraController* cameraController_ = nullptr;
@@ -49,4 +50,7 @@ private:
 	void Draw();
 
 	void GenerateBlocks();
+
+	// 全ての当たり判定を行う
+	void CheckAllCollisions();
 };

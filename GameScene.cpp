@@ -2,6 +2,7 @@
 #include "Skydome.h"
 #include "WorldTransform.h"
 #include "Enemy.h"
+#include "AABB.h"
 
 
 using namespace KamataEngine;
@@ -21,7 +22,11 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 // デストラクタ
 GameScene::~GameScene() {
 	delete player_;
-	delete enemy_;
+	for (Enemy* enemy : enemies_) {
+		delete enemy;
+	}
+	
+	enemies_.clear();
 
 	delete model_;
 	delete debugCamera_;
@@ -77,9 +82,15 @@ void GameScene::Initialize() {
 	エネミー
 	-----------------------------*/
 	Model* enemyModel = Model::CreateFromOBJ("enemy", true); // ※モデル名は環境に合わせて変更してください
-	enemy_ = new Enemy();
-	enemy_->Initialize(enemyModel, &camera_, {15.0f, 1.0f, 0.0f});
+	for (int32_t i = 0; i < 3; ++i) {
+		Enemy* newEnemy = new Enemy();
+		
+		Vector3 enemyPosition = {15.0f + (i * 5.0f), 3.0f, 0.0f};
+		newEnemy->Initialize(enemyModel, &camera_, enemyPosition);
 
+		// リストに追加！
+		enemies_.push_back(newEnemy);
+	}
 
 	/*--------------------
 	追従カメラ
@@ -141,6 +152,43 @@ void GameScene::GenerateBlocks() {
 	}
 }
 
+/*-------------------
+全ての当たり判定を行う
+--------------------------*/
+void GameScene::CheckAllCollisions() {
+
+	// 判定対象1と2の座標
+	AABB aabb1, aabb2;
+
+#pragma region 自キャラと敵キャラの当たり判定
+	if (player_) {
+		// 自キャラの座標
+		aabb1 = player_->GetAABB();
+
+		// 自キャラと敵全ての当たり判定
+		for (Enemy* enemy : enemies_) {
+			// 敵の座標
+			aabb2 = enemy->GetAABB();
+
+			// AABB同士の交差判定
+			if (IsCollision(aabb1, aabb2)) {
+				
+				player_->OnCollision(enemy);
+				enemy->OnCollision(player_);
+			}
+		}
+	}
+#pragma endregion
+
+#pragma region 自キャラとアイテムの当たり判定
+
+#pragma endregion
+
+#pragma region 自弾と敵キャラの当たり判定
+
+#pragma endregion
+}
+
 
 
 // 更新
@@ -155,8 +203,8 @@ void GameScene::Update() {
 		cameraController_->Update();
 	}
 
-	if (enemy_ != nullptr) {
-		enemy_->Update();
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
 	}
 
 	// 5-2
@@ -198,6 +246,7 @@ void GameScene::Update() {
 
 	// 5-3
 	skydome_->Update();
+	CheckAllCollisions();
 }
 
 // 描画
@@ -212,8 +261,8 @@ void GameScene::Draw() {
 		player_->Draw();
 	}
 
-	if (enemy_ != nullptr) {
-		enemy_->Draw();
+	for (Enemy* enemy : enemies_) {
+		enemy->Draw();
 	}
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
