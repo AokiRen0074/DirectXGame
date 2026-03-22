@@ -3,6 +3,7 @@
 #include "WorldTransform.h"
 #include "Enemy.h"
 #include "AABB.h"
+#include "DeathParticles.h"
 
 
 using namespace KamataEngine;
@@ -25,6 +26,12 @@ GameScene::~GameScene() {
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
 	}
+
+	if (deathParticles_) {
+		delete deathParticles_;
+		deathParticles_ = nullptr;
+	}
+	delete modelDeathParticle_;
 	
 	enemies_.clear();
 
@@ -81,7 +88,7 @@ void GameScene::Initialize() {
 	/*-----------------------
 	エネミー
 	-----------------------------*/
-	Model* enemyModel = Model::CreateFromOBJ("enemy", true); // ※モデル名は環境に合わせて変更してください
+	Model* enemyModel = Model::CreateFromOBJ("enemy", true); 
 	for (int32_t i = 0; i < 3; ++i) {
 		Enemy* newEnemy = new Enemy();
 		
@@ -91,6 +98,14 @@ void GameScene::Initialize() {
 		// リストに追加！
 		enemies_.push_back(newEnemy);
 	}
+
+	/*------------------------
+	デスパーティクル
+	-------------------------*/
+	modelDeathParticle_ = Model::CreateFromOBJ("deathParticle", true);
+
+	deathParticles_ = new DeathParticles();
+	deathParticles_->Initialize(modelDeathParticle_, &camera_, player_->worldTransform_.translation_);
 
 	/*--------------------
 	追従カメラ
@@ -207,6 +222,10 @@ void GameScene::Update() {
 		enemy->Update();
 	}
 
+	if (deathParticles_) {
+		deathParticles_->Update();
+	}
+
 	// 5-2
 
 	debugCamera_->Update();
@@ -263,6 +282,10 @@ void GameScene::Draw() {
 
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw();
+	}
+
+	if (deathParticles_) {
+		deathParticles_->Draw();
 	}
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {

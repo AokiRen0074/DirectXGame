@@ -9,6 +9,7 @@
 #include <list>
 
 class Enemy;
+class DeathParticles;
 
 // ゲームシーン
 class GameScene {
@@ -18,6 +19,9 @@ public:
 	KamataEngine::Camera camera_;
 	MapChipField* mapChipField_;
 	CameraController* cameraController_ = nullptr;
+	// デスパーティクル
+	KamataEngine::Model* modelDeathParticle_ = nullptr; 
+	DeathParticles* deathParticles_ = nullptr;
 
 	GameScene() = default; 
 	~GameScene();
