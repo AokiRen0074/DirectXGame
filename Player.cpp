@@ -345,11 +345,11 @@ AABB Player::GetAABB() {
 ---------------------*/
 
 void Player::OnCollision(const Enemy* enemy) {
+	(void)*enemy;
 
-	(void)enemy;
-	
-	velocity_.y = kJumpAcceleration;
-	onGround_ = false; // 空中状態にする
+	isDead_ = true;
+
+
 }
 
 /*-------------------------------------

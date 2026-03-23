@@ -119,6 +119,10 @@ void GameScene::Initialize() {
 
 	cameraController_->Reset();
 	
+	/*------------------------
+	ゲームフェーズ
+	--------------------------------*/
+	phase_ = Phase::kPlay;
 
 
 
@@ -204,57 +208,95 @@ void GameScene::CheckAllCollisions() {
 #pragma endregion
 }
 
+/*------------------------
+フェーズの切り替え処理
+------------------------*/
 
+void GameScene::ChangePhase() {
+	switch (phase_) {
+	case Phase::kPlay:
+		// 自キャラがデス状態かチェック
+		if (player_->isDead_) {
+			// 死亡演出フェーズに切り替え
+			phase_ = Phase::kDeath;
 
-// 更新
+			
+			const Vector3& deathParticlesPosition = player_->GetWorldPosition();
+
+			
+			if (deathParticles_) {
+				delete deathParticles_;
+			}
+			deathParticles_ = new DeathParticles();
+			deathParticles_->Initialize(modelDeathParticle_, &camera_, deathParticlesPosition);
+		}
+		break;
+	case Phase::kDeath:
+		
+		break;
+	}
+}
+
+/*----------------------------
+更新処理
+----------------------------*/
 void GameScene::Update() {
+
 	camera_.UpdateMatrix();
 
+	ChangePhase();
+
+	switch (phase_) {
+	case Phase::kPlay:
+		// ゲームプレイフェーズの処理
+		UpdateGamePlayPhase();
+		break;
+	case Phase::kDeath:
+		// デス演出フェーズの処理
+		UpdateDeathPhase();
+		break;
+	}
+}
+
+/*---------------------------
+ゲームプレイ
+------------------------------*/
+void GameScene::UpdateGamePlayPhase() {
+	// 自キャラの更新
 	if (player_ != nullptr) {
 		player_->Update();
 	}
 
+	// カメラコントローラの更新
 	if (cameraController_ != nullptr) {
 		cameraController_->Update();
 	}
 
+	// 敵の更新
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
 
-	if (deathParticles_) {
-		deathParticles_->Update();
-	}
-
-	// 5-2
-
+	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
-
-	#ifdef _DEBUG
+#ifdef _DEBUG
 	if (Input::GetInstance()->TriggerKey(DIK_P)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
 
-	#endif
-
-	// デバッグカメラの処理
+#endif
 	if (isDebugCameraActive_) {
-		debugCamera_->Update();
-
 		camera_.matView = debugCamera_->GetCamera().matView;
 		camera_.matProjection = debugCamera_->GetCamera().matProjection;
-
-		// 行列を転送して反映させる
 		camera_.TransferMatrix();
 	} else {
 		camera_.matView = cameraController_->GetCamera().matView;
 		camera_.matProjection = cameraController_->GetCamera().matProjection;
-
-		// 行列を転送して反映させる
 		camera_.TransferMatrix();
 	}
 
 
+	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock)
@@ -263,9 +305,58 @@ void GameScene::Update() {
 		}
 	}
 
-	// 5-3
+	// 天球の更新
 	skydome_->Update();
+
+	// 全ての当たり判定
 	CheckAllCollisions();
+}
+
+// デス演出フェーズの更新処理
+void GameScene::UpdateDeathPhase() {
+	// 敵の更新
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
+
+	// デスパーティクルの更新（デスフェーズのみ）
+	if (deathParticles_) {
+		deathParticles_->Update();
+	}
+
+	if (deathParticles_ && deathParticles_->isFinished_) {
+		finished_ = true;
+	}
+
+	// デバッグカメラの処理とカメラの更新
+	debugCamera_->Update();
+#ifdef _DEBUG
+	if (Input::GetInstance()->TriggerKey(DIK_P)) {
+		isDebugCameraActive_ = !isDebugCameraActive_;
+	}
+#endif
+	if (isDebugCameraActive_) {
+		camera_.matView = debugCamera_->GetCamera().matView;
+		camera_.matProjection = debugCamera_->GetCamera().matProjection;
+		camera_.TransferMatrix();
+	} else {
+		camera_.matView = cameraController_->GetCamera().matView;
+		camera_.matProjection = cameraController_->GetCamera().matProjection;
+		camera_.TransferMatrix();
+	}
+
+
+	// ブロックの更新
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			if (!worldTransformBlock)
+				continue;
+			UpdateWorldTransform(*worldTransformBlock);
+		}
+	}
+
+	// 天球の更新
+	skydome_->Update();
 }
 
 // 描画
@@ -276,7 +367,7 @@ void GameScene::Draw() {
 
 
 
-	if (player_ != nullptr) {
+	if (player_ != nullptr && !player_->isDead_) {
 		player_->Draw();
 	}
 

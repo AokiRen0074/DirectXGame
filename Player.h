@@ -67,6 +67,9 @@ public:
 
 	const KamataEngine::Vector3& GetVelocity() const { return velocity_; };
 
+	// デスフラグ
+	bool isDead_ = false;
+
 	// 接地状態フラグ
 	bool onGround_ = true;
 	// 重力加速度
@@ -105,6 +108,8 @@ private:
 	// マップチップによるフィールド
 	MapChipField* mapChipField_ = nullptr;
 
+
+	
 
 	// uint32_t textureHandle_ = 0u;
 };

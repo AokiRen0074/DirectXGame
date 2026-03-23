@@ -26,6 +26,16 @@ public:
 	GameScene() = default; 
 	~GameScene();
 
+	enum class Phase {
+		kPlay, 
+		kDeath, 
+	};
+
+	Phase phase_;
+
+	// 終了フラグのゲッター
+	bool IsFinished() const { return finished_; }
+
 private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;
@@ -43,6 +53,9 @@ private:
 
 	std::unique_ptr<Skydome> skydome_;
 
+	// 終了フラグ
+	bool finished_ = false;
+
 	public:
 	// 初期化
 	void Initialize();
@@ -57,4 +70,11 @@ private:
 
 	// 全ての当たり判定を行う
 	void CheckAllCollisions();
+
+	// 各フェーズの更新処理をまとめる関数
+	void UpdateGamePlayPhase();
+	void UpdateDeathPhase();
+
+	// フェーズ切り替えよう
+	void ChangePhase();
 };

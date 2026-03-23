@@ -11,6 +11,9 @@ public:
 	void Update();
 	void Draw();
 
+	// 終了フラグ
+	bool isFinished_ = false;
+
 private:
 	// パーティクルの個数
 	static inline const uint32_t kNumParticles = 8;
@@ -27,8 +30,7 @@ private:
 	// 分割した1個分の角度
 	static inline const float kAngleUnit = (2.0f * std::numbers::pi_v<float>) / kNumParticles;
 
-	// 終了フラグ
-	bool isFinished_ = false;
+	
 	// 経過時間カウント
 	float counter_ = 0.0f;
 
