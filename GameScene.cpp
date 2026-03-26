@@ -40,6 +40,7 @@ GameScene::~GameScene() {
 	delete modelSkydome_;
 	delete mapChipField_;
 	delete cameraController_;
+	delete fade_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -122,7 +123,10 @@ void GameScene::Initialize() {
 	/*------------------------
 	ゲームフェーズ
 	--------------------------------*/
-	phase_ = Phase::kPlay;
+	fade_ = new Fade();
+	fade_->Initialize();
+	fade_->Start(Fade::Status::FadeIn, 1.0f); // ゲーム開始時に1秒でフェードイン
+	phase_ = Phase::kFadeIn;
 
 
 
@@ -241,19 +245,42 @@ void GameScene::ChangePhase() {
 更新処理
 ----------------------------*/
 void GameScene::Update() {
-
 	camera_.UpdateMatrix();
-
 	ChangePhase();
 
 	switch (phase_) {
+	case Phase::kFadeIn:
+		// フェードイン処理
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			phase_ = Phase::kPlay;
+			fade_->Stop();
+		}
+
+		UpdateGamePlayPhase(); 
+		break;
+
 	case Phase::kPlay:
-		// ゲームプレイフェーズの処理
 		UpdateGamePlayPhase();
 		break;
+
 	case Phase::kDeath:
-		// デス演出フェーズの処理
 		UpdateDeathPhase();
+		// フェードアウトに移行する
+		if (deathParticles_ && deathParticles_->isFinished_) {
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::FadeOut, 1.0f); 
+		}
+		break;
+
+	case Phase::kFadeOut:
+		// フェードアウト処理
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			finished_ = true; 
+		}
+
+		UpdateDeathPhase(); 
 		break;
 	}
 }
@@ -324,9 +351,7 @@ void GameScene::UpdateDeathPhase() {
 		deathParticles_->Update();
 	}
 
-	if (deathParticles_ && deathParticles_->isFinished_) {
-		finished_ = true;
-	}
+	
 
 	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
@@ -385,5 +410,9 @@ void GameScene::Draw() {
 				continue;
 			model_->Draw(*worldTransformBlock, camera_);
 		}
+	}
+
+	if (fade_) {
+		fade_->Draw();
 	}
 }

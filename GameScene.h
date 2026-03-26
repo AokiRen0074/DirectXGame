@@ -7,6 +7,7 @@
 #include "MapChipField.h"
 #include "CameraControll.h"
 #include <list>
+#include "Fade.h"
 
 class Enemy;
 class DeathParticles;
@@ -14,6 +15,15 @@ class DeathParticles;
 // ゲームシーン
 class GameScene {
 public:
+;
+
+	enum class Phase {
+		kFadeIn, 
+		kPlay,    
+		kDeath, 
+		kFadeOut,
+	};
+
 	Player* player_ = nullptr;
 	std::list<Enemy*> enemies_;
 	KamataEngine::Camera camera_;
@@ -26,12 +36,10 @@ public:
 	GameScene() = default; 
 	~GameScene();
 
-	enum class Phase {
-		kPlay, 
-		kDeath, 
-	};
+	
 
-	Phase phase_;
+Phase phase_ = Phase::kFadeIn;
+
 
 	// 終了フラグのゲッター
 	bool IsFinished() const { return finished_; }
@@ -50,6 +58,7 @@ private:
 
 	bool isDebugCameraActive_ = false;
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
+	Fade* fade_ = nullptr;
 
 	std::unique_ptr<Skydome> skydome_;
 
