@@ -30,7 +30,19 @@ public:
 		kNumCorner
 	};
 
-	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+	enum class Behavior {
+		kUnknown,
+		kRoot,   
+		kAttack, 
+	};
+
+	enum class AttackPhase {
+		kCharge,   
+		kDash,     
+		kRecovery, 
+	};
+
+	void Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAttack, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
 
 	void Update();
 
@@ -42,6 +54,9 @@ public:
 
 	//衝突応答
 	void OnCollision(const Enemy* enemy);
+
+
+	
 
 	// ワールド座標を取得
 	KamataEngine::Vector3 GetWorldPosition();
@@ -108,7 +123,27 @@ private:
 	// マップチップによるフィールド
 	MapChipField* mapChipField_ = nullptr;
 
+	// 現在のビヘイビア
+	Behavior behavior_ = Behavior::kRoot;
 
+	// 次の振る舞いリクエスト
+	Behavior behaviorRequest_ = Behavior::kUnknown;
+
+	uint32_t attackParameter_ = 0;
+
+	AttackPhase attackPhase_ = AttackPhase::kCharge;
+
+	KamataEngine::Model* modelAttack_ = nullptr;
+	KamataEngine::WorldTransform worldTransformAttack_;
+
+	void BehaviorRootUpdate();
+
+	void BehaviorAttackUpdate();
+
+	// 通常行動初期化
+	void BehaviorRootInitialize();
+	// 攻撃行動初期化
+	void BehaviorAttackInitialize();
 	
 
 	// uint32_t textureHandle_ = 0u;

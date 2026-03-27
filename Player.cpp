@@ -21,10 +21,22 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	return result;
 }
 
+// イージング
+static float EaseOut(float start, float end, float t) {
+	float easeT = 1.0f - (1.0f - t) * (1.0f - t);
+	return start + (end - start) * easeT;
+}
+
+
+static float EaseIn(float start, float end, float t) {
+	float easeT = t * t;
+	return start + (end - start) * easeT;
+}
+
 /*-----------------------------------
 初期化
 ---------------------------------*/
-void Player::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position) {
+void Player::Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAttack, KamataEngine::Camera* camera, const KamataEngine::Vector3& position) {
 	assert(model);
 	model_ = model;
 
@@ -33,6 +45,26 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
+
+	modelAttack_ = modelAttack;
+	worldTransformAttack_.Initialize();
+}
+
+/*-------------------------------------
+通常行動初期化
+--------------------------------*/
+void Player::BehaviorRootInitialize() {
+
+}
+
+/*-------------------------------------
+攻撃行動初期化
+--------------------------------*/
+void Player::BehaviorAttackInitialize() {
+	// カウンター初期化
+	attackParameter_ = 0;
+	attackPhase_ = AttackPhase::kCharge; 
+	velocity_ = {0.0f, 0.0f, 0.0f};
 }
 
 /*-----------------------------------
@@ -357,6 +389,42 @@ void Player::OnCollision(const Enemy* enemy) {
 --------------------------------*/
 void Player::Update() {
 
+	if (behaviorRequest_ != Behavior::kUnknown) {
+		// 振る舞いを変更する
+		behavior_ = behaviorRequest_;
+
+		// 各振る舞いごとの初期化
+		switch (behavior_) {
+		case Behavior::kRoot:
+		default:
+			BehaviorRootInitialize();
+			break;
+		case Behavior::kAttack:
+			BehaviorAttackInitialize();
+			break;
+		}
+
+		// 振る舞いリクエストをリセット
+		behaviorRequest_ = Behavior::kUnknown;
+	}
+
+	// 現在の状態のUpdate
+	switch (behavior_) {
+	case Behavior::kRoot:
+	default:
+		BehaviorRootUpdate();
+		break;
+	case Behavior::kAttack:
+		BehaviorAttackUpdate();
+		break;
+	}
+}
+
+/*----------------------
+通常の行動
+----------------------------*/
+void Player::BehaviorRootUpdate() {
+
 	InputMove();
 
 	CollisionMapInfo collisionMapInfo;
@@ -380,6 +448,11 @@ void Player::Update() {
 	// 自キャラの角度を設定する
 	worldTransform_.rotation_.y = destinationRotationY;
 
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+		// 攻撃ビヘイビアをリクエスト
+		behaviorRequest_ = Behavior::kAttack;
+	}
+
 	// 移動
 	worldTransform_.translation_.x += velocity_.x;
 	worldTransform_.translation_.y += velocity_.y;
@@ -387,10 +460,110 @@ void Player::Update() {
 
 	// 行列の計算
 	UpdateWorldTransform(worldTransform_);
+
+	
+
 }
+
+
+/*-------------------------------------
+攻撃行動更新
+--------------------------------*/
+void Player::BehaviorAttackUpdate() {
+	// アニメーションの時間を定義
+	const uint32_t kChargeTime = 10;  
+	const uint32_t kDashTime = 3;     
+	const uint32_t kRecoveryTime = 20; 
+
+	// 攻撃用の速度
+	KamataEngine::Vector3 attackVelocity = {0.0f, 0.0f, 0.0f};
+	const float kDashSpeed = 1.5f; 
+
+	// カウンターを先に進める
+	attackParameter_++;
+
+	// サブフェーズごとの処理
+	switch (attackPhase_) {
+	case AttackPhase::kCharge: {
+		// 溜め動作のアニメーション
+		float t = static_cast<float>(attackParameter_) / kChargeTime;
+		worldTransform_.scale_.z = EaseOut(1.0f, 0.3f, t);
+		worldTransform_.scale_.y = EaseOut(1.0f, 1.6f, t);
+
+		if (attackParameter_ >= kChargeTime) {
+			attackPhase_ = AttackPhase::kDash;
+			attackParameter_ = 0; // カウンターをリセット
+		}
+		break;
+	}
+	case AttackPhase::kDash: {
+		
+		float t = static_cast<float>(attackParameter_) / kDashTime;
+		worldTransform_.scale_.z = EaseOut(0.3f, 1.3f, t);
+		worldTransform_.scale_.y = EaseIn(1.6f, 0.7f, t);
+
+		// 移動のコントロール
+		if (lrDirection_ == LRDirection::kRight) {
+			attackVelocity.x = kDashSpeed;
+		} else {
+			attackVelocity.x = -kDashSpeed;
+		}
+
+		if (attackParameter_ >= kDashTime) {
+			attackPhase_ = AttackPhase::kRecovery;
+			attackParameter_ = 0;
+		}
+		break;
+	}
+	case AttackPhase::kRecovery: {
+		float t = static_cast<float>(attackParameter_) / kRecoveryTime;
+		worldTransform_.scale_.z = EaseOut(1.3f, 1.0f, t);
+		worldTransform_.scale_.y = EaseOut(0.7f, 1.0f, t);
+
+		if (attackParameter_ >= kRecoveryTime) {
+			behaviorRequest_ = Behavior::kRoot; // 通常状態へ戻るリクエスト
+			// スケールを確実に戻しておく
+			worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
+		}
+		break;
+	}
+	} 
+
+	// 衝突判定用に情報をセット
+	CollisionMapInfo collisionMapInfo;
+	collisionMapInfo.moveAmount = attackVelocity;
+
+	// 壁などのマップ当たり判定（既存の関数を利用）
+	CheckMapCollision(collisionMapInfo);
+
+	// 実際の移動を適用
+	worldTransform_.translation_.x += collisionMapInfo.moveAmount.x;
+	worldTransform_.translation_.y += collisionMapInfo.moveAmount.y;
+	worldTransform_.translation_.z += collisionMapInfo.moveAmount.z;
+
+	// 行列の更新
+	UpdateWorldTransform(worldTransform_);
+
+	worldTransformAttack_.translation_ = worldTransform_.translation_;
+	worldTransformAttack_.rotation_ = worldTransform_.rotation_;
+
+	
+	UpdateWorldTransform(worldTransformAttack_);
+}
+
 
 /*--------------------
 描画
 
 --------------------*/
-void Player::Draw() { model_->Draw(worldTransform_, *camera_); }
+void Player::Draw() {
+	model_->Draw(worldTransform_, *camera_);
+
+	if (behavior_ == Behavior::kAttack) {
+		
+		if (modelAttack_) {
+			modelAttack_->Draw(worldTransformAttack_, *camera_);
+		}
+	}
+
+}

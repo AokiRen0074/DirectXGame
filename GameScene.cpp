@@ -76,12 +76,13 @@ void GameScene::Initialize() {
 	プレイヤー
 	-------------------------*/
 	Model* playerModel = Model::CreateFromOBJ("player", true);
+	Model* playerAttackModel = Model::CreateFromOBJ("hit_effect", true);
 	camera_.Initialize();
 	camera_.farZ = 2000.0f;
 	camera_.translation_ = {0.0f, 0.0f, -50.0f};
 	player_ = new Player();
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 0);
-	player_->Initialize(playerModel, &camera_,playerPosition);
+	player_->Initialize(playerModel, playerAttackModel, &camera_, playerPosition);
 	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
 	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
 	player_->SetMapChipField(mapChipField_);
