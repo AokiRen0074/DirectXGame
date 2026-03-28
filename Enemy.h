@@ -6,12 +6,24 @@ class Player;
 
 class Enemy {
 public:
+
+	enum class Behavior {
+		kUnknown,
+		kRoot, 
+		kDeath, 
+	};
+
 	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
 	void Update();
 	void Draw();
 
 	//衝突応答
 	void OnCollision(const Player* player);
+
+	bool IsDead() const { return isDead_; }
+
+	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+	
 
 	// ワールド座標を取得
 	KamataEngine::Vector3 GetWorldPosition();
@@ -23,6 +35,8 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;
+	
+	bool isCollisionDisabled_ = false;
 
 	// キャラクターのサイズ
 	static inline const float kWidth = 0.8f;
@@ -32,6 +46,19 @@ private:
 
 	// 速度
 	KamataEngine::Vector3 velocity_ = {};
+
+	/*-----------------
+	ビヘイビア
+	-----------------------*/
+	Behavior behavior_ = Behavior::kRoot;
+	Behavior behaviorRequest_ = Behavior::kUnknown;
+
+	uint32_t deathTimer_ = 0;
+
+	void BehaviorRootInitialize();
+	void BehaviorDeathInitialize();
+	void BehaviorRootUpdate();
+	void BehaviorDeathUpdate();
 
 	/*------------------
 	アニメーション
@@ -46,4 +73,6 @@ private:
 
 	// タイマー（経過時間 tn を記録する変数）
 	float walkTimer_ = 0.0f;
+
+	bool isDead_ = false;
 };

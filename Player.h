@@ -55,7 +55,7 @@ public:
 	//衝突応答
 	void OnCollision(const Enemy* enemy);
 
-
+	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
 	
 
 	// ワールド座標を取得

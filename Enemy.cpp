@@ -3,6 +3,8 @@
 #include "WorldTransform.h"
 #include <cassert>
 #include <numbers>
+#include <numbers>
+#include "Player.h"
 
 using namespace KamataEngine;
 
@@ -23,6 +25,16 @@ void Enemy::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera,
 	worldTransform_.rotation_.y = -std::numbers::pi_v<float> / 2.0f;
 
 	velocity_ = {-kWalkSpeed, 0.0f, 0.0f};
+}
+
+/*-------------------------------------
+各初期化処理
+--------------------------------*/
+void Enemy::BehaviorRootInitialize() {}
+
+void Enemy::BehaviorDeathInitialize() {
+	deathTimer_ = 0; 
+	isCollisionDisabled_ = true;
 }
 
 
@@ -56,33 +68,87 @@ AABB Enemy::GetAABB() {
 /*---------------------
 衝突応答
 -------------------------*/
-void Enemy::OnCollision(const Player* player) {
-	
-	(void)player;
+void Enemy::OnCollision(const Player* player) { 
+
+	if (behavior_ == Behavior::kDeath) {
+		// デス演出中なら何もしない
+		return;
+	}
+
+	// プレイヤーが攻撃中ならデス演出に移行
+	if (player->IsAttack()) {
+		behaviorRequest_ = Behavior::kDeath;
+	}
 }
 
+/*-------------------------------------
+通常行動
+--------------------------------*/
+void Enemy::BehaviorRootUpdate() {
+	worldTransform_.translation_.x += velocity_.x;
+	worldTransform_.translation_.y += velocity_.y;
+	worldTransform_.translation_.z += velocity_.z;
+	walkTimer_ += 1.0f / 60.0f;
+
+	// 回転アニメーション
+	float param = std::sin(2.0f * std::numbers::pi_v<float> * walkTimer_ / kWalkMotionTime);
+	float t = (param + 1.0f) / 2.0f;
+	float degree = kWalkMotionAngleStart + (kWalkMotionAngleEnd - kWalkMotionAngleStart) * t;
+	worldTransform_.rotation_.x = degree * (std::numbers::pi_v<float> / 180.0f);
+	
+	// ワールド行列の更新
+	UpdateWorldTransform(worldTransform_);
+}
+
+/*-------------------------------------
+死亡演出行動
+--------------------------------*/
+void Enemy::BehaviorDeathUpdate() {
+	// やられアニメーション
+	deathTimer_++;
+	const uint32_t kDeathTime = 60;
+
+	worldTransform_.rotation_.y += 0.5f;
+	worldTransform_.rotation_.x = (std::numbers::pi_v<float> / kDeathTime) * deathTimer_;
+	const float kFlyUpSpeed = 0.1f;
+	worldTransform_.translation_.y += kFlyUpSpeed;
+	// 行列の更新
+	UpdateWorldTransform(worldTransform_);
+
+	if (deathTimer_ >= kDeathTime) {
+		isDead_ = true;
+	}
+}
 
 // ==========================================
 // 更新処理
 // ==========================================
 void Enemy::Update() {
 
-	worldTransform_.translation_.x += velocity_.x;
-	worldTransform_.translation_.y += velocity_.y;
-	worldTransform_.translation_.z += velocity_.z;
+if (behaviorRequest_ != Behavior::kUnknown) {
+		behavior_ = behaviorRequest_;
 
-	walkTimer_ += 1.0f / 60.0f;
+		switch (behavior_) {
+		case Behavior::kRoot:
+			BehaviorRootInitialize();
+			break;
+		case Behavior::kDeath:
+			BehaviorDeathInitialize();
+			break;
+		default:
+			break;
+		}
+		behaviorRequest_ = Behavior::kUnknown;
+	}
 
-	// 回転アニメーション
-	float param = std::sin(2.0f * std::numbers::pi_v<float> * walkTimer_ / kWalkMotionTime);
-
-	float t = (param + 1.0f) / 2.0f;
-	float degree = kWalkMotionAngleStart + (kWalkMotionAngleEnd - kWalkMotionAngleStart) * t;
-
-	worldTransform_.rotation_.x = degree * (std::numbers::pi_v<float> / 180.0f);
-
-	// ワールド行列の更新
-	UpdateWorldTransform(worldTransform_);
+	switch (behavior_) {
+	case Behavior::kRoot:
+		BehaviorRootUpdate();
+		break;
+	case Behavior::kDeath:
+		BehaviorDeathUpdate();
+		break;
+	}
 }
 
 // ==========================================

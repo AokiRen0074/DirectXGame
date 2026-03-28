@@ -379,6 +379,10 @@ AABB Player::GetAABB() {
 void Player::OnCollision(const Enemy* enemy) {
 	(void)*enemy;
 
+	if (IsAttack()) {
+		return;
+	}
+
 	isDead_ = true;
 
 

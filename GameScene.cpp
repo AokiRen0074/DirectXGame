@@ -191,6 +191,11 @@ void GameScene::CheckAllCollisions() {
 
 		// 自キャラと敵全ての当たり判定
 		for (Enemy* enemy : enemies_) {
+
+			if (enemy->IsCollisionDisabled()) {
+				continue;
+			}
+
 			// 敵の座標
 			aabb2 = enemy->GetAABB();
 
@@ -304,6 +309,14 @@ void GameScene::UpdateGamePlayPhase() {
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
+
+	enemies_.remove_if([](Enemy* enemy) {
+		if (enemy->IsDead()) { 
+			delete enemy;      
+			return true;       
+		}
+		return false;
+	});
 
 	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
