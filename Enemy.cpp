@@ -5,6 +5,7 @@
 #include <numbers>
 #include <numbers>
 #include "Player.h"
+#include "GameScene.h"
 
 using namespace KamataEngine;
 
@@ -79,7 +80,19 @@ void Enemy::OnCollision(const Player* player) {
 	if (player->IsAttack()) {
 		behaviorRequest_ = Behavior::kDeath;
 	}
+
+	if (gameScene_) {
+		KamataEngine::Vector3 effectPos;
+		// 中間地点
+		effectPos.x = (worldTransform_.translation_.x + player->GetWorldTransform().translation_.x) / 2.0f;
+		effectPos.y = (worldTransform_.translation_.y + player->GetWorldTransform().translation_.y) / 2.0f;
+		effectPos.z = (worldTransform_.translation_.z + player->GetWorldTransform().translation_.z) / 2.0f;
+
+		gameScene_->CreateHitEffect(effectPos);
+	}
+
 }
+
 
 /*-------------------------------------
 通常行動

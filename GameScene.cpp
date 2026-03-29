@@ -4,6 +4,7 @@
 #include "Enemy.h"
 #include "AABB.h"
 #include "DeathParticles.h"
+#include "HitEffect.h"
 
 
 using namespace KamataEngine;
@@ -41,6 +42,7 @@ GameScene::~GameScene() {
 	delete mapChipField_;
 	delete cameraController_;
 	delete fade_;
+	delete modelHitEffect_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -96,6 +98,7 @@ void GameScene::Initialize() {
 		
 		Vector3 enemyPosition = {15.0f + (i * 5.0f), 3.0f, 0.0f};
 		newEnemy->Initialize(enemyModel, &camera_, enemyPosition);
+		newEnemy->SetGameScene(this);
 
 		// リストに追加！
 		enemies_.push_back(newEnemy);
@@ -108,6 +111,15 @@ void GameScene::Initialize() {
 
 	deathParticles_ = new DeathParticles();
 	deathParticles_->Initialize(modelDeathParticle_, &camera_, player_->worldTransform_.translation_);
+
+	/*------------------------
+	ヒットエフェクト
+	-------------------------*/
+	// ヒットエフェクト用モデルの読み込み
+	modelHitEffect_ = Model::CreateFromOBJ("particle", true);
+
+	HitEffect::SetModel(modelHitEffect_);
+	HitEffect::SetCamera(&camera_);
 
 	/*--------------------
 	追従カメラ
@@ -247,6 +259,14 @@ void GameScene::ChangePhase() {
 	}
 }
 
+/*--------------------------------
+ヒットエフェクト生成処理
+-----------------------------------*/
+void GameScene::CreateHitEffect(const KamataEngine::Vector3& position) {
+	HitEffect* newHitEffect = HitEffect::Create(position);
+	hitEffects_.push_back(newHitEffect);
+}
+
 /*----------------------------
 更新処理
 ----------------------------*/
@@ -309,6 +329,19 @@ void GameScene::UpdateGamePlayPhase() {
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
+
+	// ヒットエフェクトの更新
+	for (HitEffect* effect : hitEffects_) {
+		effect->Update();
+	}
+
+	hitEffects_.remove_if([](HitEffect* effect) {
+		if (effect->IsDead()) {
+			delete effect;
+			return true;
+		}
+		return false;
+	});
 
 	enemies_.remove_if([](Enemy* enemy) {
 		if (enemy->IsDead()) { 
@@ -416,6 +449,10 @@ void GameScene::Draw() {
 
 	if (deathParticles_) {
 		deathParticles_->Draw();
+	}
+
+	for (HitEffect* effect : hitEffects_) {
+		effect->Draw();
 	}
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {

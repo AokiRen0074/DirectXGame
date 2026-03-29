@@ -3,6 +3,7 @@
 #include "AABB.h"
 
 class Player;
+class GameScene;
 
 class Enemy {
 public:
@@ -24,6 +25,8 @@ public:
 
 	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
 	
+	// セッター
+	void SetGameScene(GameScene* gameScene) { gameScene_ = gameScene; }
 
 	// ワールド座標を取得
 	KamataEngine::Vector3 GetWorldPosition();
@@ -46,6 +49,8 @@ private:
 
 	// 速度
 	KamataEngine::Vector3 velocity_ = {};
+
+	GameScene* gameScene_ = nullptr;
 
 	/*-----------------
 	ビヘイビア

@@ -9,8 +9,10 @@
 #include <list>
 #include "Fade.h"
 
+
 class Enemy;
 class DeathParticles;
+class HitEffect;
 
 // ゲームシーン
 class GameScene {
@@ -23,6 +25,9 @@ public:
 		kDeath, 
 		kFadeOut,
 	};
+
+	// エフェクトを生成する関数
+	void CreateHitEffect(const KamataEngine::Vector3& position);
 
 	Player* player_ = nullptr;
 	std::list<Enemy*> enemies_;
@@ -53,6 +58,12 @@ private:
 
 	// 天球3Dモデル
 	KamataEngine::Model* modelSkydome_ = nullptr;
+
+	// ヒットエフェクトモデル
+	KamataEngine::Model* modelHitEffect_ = nullptr;
+
+	std::list<HitEffect*> hitEffects_;
+
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
