@@ -5,6 +5,8 @@
 #include "AABB.h"
 #include "DeathParticles.h"
 #include "HitEffect.h"
+#include "ShieldEnemy.h"
+#include "GuardEffect.h"
 
 
 using namespace KamataEngine;
@@ -43,6 +45,18 @@ GameScene::~GameScene() {
 	delete cameraController_;
 	delete fade_;
 	delete modelHitEffect_;
+
+	for (GuardEffect* effect : guardEffects_) {
+		delete effect;
+	}
+	guardEffects_.clear();
+	delete modelGuardEffect_;
+
+	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
+		delete shieldEnemy;
+	}
+	shieldEnemies_.clear();
+	delete modelShieldEnemy_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -104,6 +118,23 @@ void GameScene::Initialize() {
 		enemies_.push_back(newEnemy);
 	}
 
+	/*-----------------------
+	シールドエネミー
+	-----------------------------*/
+	modelShieldEnemy_ = Model::CreateFromOBJ("shieldEnemy", true);
+
+	for (int32_t i = 0; i < 2; ++i) { 
+		ShieldEnemy* newShieldEnemy = new ShieldEnemy();
+	
+		Vector3 enemyPosition = {50.0f + (i * 7.0f), 3.0f, 0.0f};
+		newShieldEnemy->Initialize(modelShieldEnemy_, &camera_, enemyPosition);
+
+		newShieldEnemy->SetGameScene(this);
+
+		// リストに追加
+		shieldEnemies_.push_back(newShieldEnemy);
+	}
+
 	/*------------------------
 	デスパーティクル
 	-------------------------*/
@@ -120,6 +151,11 @@ void GameScene::Initialize() {
 
 	HitEffect::SetModel(modelHitEffect_);
 	HitEffect::SetCamera(&camera_);
+
+	// シールドエネミーのときの
+	modelGuardEffect_ = Model::CreateFromOBJ("ring", true);
+	GuardEffect::SetModel(modelGuardEffect_);
+	GuardEffect::SetCamera(&camera_);
 
 	/*--------------------
 	追従カメラ
@@ -217,6 +253,22 @@ void GameScene::CheckAllCollisions() {
 				player_->OnCollision(enemy);
 				enemy->OnCollision(player_);
 			}
+		}
+	}
+
+
+	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
+
+		if (shieldEnemy->IsCollisionDisabled()) {
+			continue;
+		}
+
+		aabb2 = shieldEnemy->GetAABB();
+
+		// AABB同士の交差判定
+		if (IsCollision(aabb1, aabb2)) {
+			player_->OnCollision((Enemy*)shieldEnemy); 
+			shieldEnemy->OnCollision(player_);
 		}
 	}
 #pragma endregion
@@ -351,6 +403,31 @@ void GameScene::UpdateGamePlayPhase() {
 		return false;
 	});
 
+	for (GuardEffect* effect : guardEffects_) {
+		effect->Update();
+	}
+
+	guardEffects_.remove_if([](GuardEffect* effect) {
+		if (effect->IsDead()) {
+			delete effect;
+			return true;
+		}
+		return false;
+	});
+
+	// シールドエネミーの更新
+	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
+		shieldEnemy->Update();
+	}
+
+	shieldEnemies_.remove_if([](ShieldEnemy* shieldEnemy) {
+		if (shieldEnemy->IsDead()) {
+			delete shieldEnemy;
+			return true;
+		}
+		return false;
+	});
+
 	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
 #ifdef _DEBUG
@@ -393,6 +470,10 @@ void GameScene::UpdateDeathPhase() {
 		enemy->Update();
 	}
 
+	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
+		shieldEnemy->Update();
+	}
+
 	// デスパーティクルの更新（デスフェーズのみ）
 	if (deathParticles_) {
 		deathParticles_->Update();
@@ -431,6 +512,11 @@ void GameScene::UpdateDeathPhase() {
 	skydome_->Update();
 }
 
+void GameScene::CreateGuardEffect(const KamataEngine::Vector3& position) {
+	GuardEffect* newEffect = GuardEffect::Create(position);
+	guardEffects_.push_back(newEffect);
+}
+
 // 描画
 void GameScene::Draw() {
 	if (skydome_) {
@@ -452,6 +538,14 @@ void GameScene::Draw() {
 	}
 
 	for (HitEffect* effect : hitEffects_) {
+		effect->Draw();
+	}
+
+	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
+		shieldEnemy->Draw();
+	}
+
+	for (GuardEffect* effect : guardEffects_) {
 		effect->Draw();
 	}
 

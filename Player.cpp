@@ -7,8 +7,6 @@
 #include <cassert>
 #include <numbers>
 
-
-
 using namespace KamataEngine;
 
 static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
@@ -28,7 +26,6 @@ static float EaseOut(float start, float end, float t) {
 	float easeT = 1.0f - (1.0f - t) * (1.0f - t);
 	return start + (end - start) * easeT;
 }
-
 
 static float EaseIn(float start, float end, float t) {
 	float easeT = t * t;
@@ -55,9 +52,7 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAt
 /*-------------------------------------
 通常行動初期化
 --------------------------------*/
-void Player::BehaviorRootInitialize() {
-
-}
+void Player::BehaviorRootInitialize() {}
 
 /*-------------------------------------
 攻撃行動初期化
@@ -65,8 +60,22 @@ void Player::BehaviorRootInitialize() {
 void Player::BehaviorAttackInitialize() {
 	// カウンター初期化
 	attackParameter_ = 0;
-	attackPhase_ = AttackPhase::kCharge; 
+	attackPhase_ = AttackPhase::kCharge;
 	velocity_ = {0.0f, 0.0f, 0.0f};
+}
+
+/*-------------------------------------
+ノックバック行動初期化
+--------------------------------*/
+void Player::BehaviorKnockbackInitialize() {
+	knockbackPhase_ = KnockbackPhase::kBlow;
+	knockbackTimer_ = 0;
+
+	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
+	
+	float blowSpeedX = (lrDirection_ == LRDirection::kRight) ? -0.8f : 0.8f;
+
+	velocity_ = {blowSpeedX, 0.4f, 0.0f};
 }
 
 /*-----------------------------------
@@ -197,7 +206,6 @@ void Player::CheckMapCollision(CollisionMapInfo& info) {
 		if (type2 == MapChipType::kBlock && typeNext2 != MapChipType::kBlock)
 			hit = true;
 
-	
 		// ブロックにヒットした時の押し戻し処理
 		if (hit) {
 			// 現在の代表角の座標を計算
@@ -354,7 +362,6 @@ KamataEngine::Vector3 Player::GetWorldPosition() {
 	worldPos.y = worldTransform_.matWorld_.m[3][1];
 	worldPos.z = worldTransform_.matWorld_.m[3][2];
 
-	
 	return worldPos;
 }
 
@@ -366,9 +373,8 @@ AABB Player::GetAABB() {
 
 	AABB aabb;
 
-	
 	aabb.min = {worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f};
-	
+
 	aabb.max = {worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f};
 
 	return aabb;
@@ -381,19 +387,22 @@ AABB Player::GetAABB() {
 void Player::OnCollision(const Enemy* enemy) {
 	(void)*enemy;
 
-	if (IsAttack()) {
+	if (IsAttack() || behavior_ == Behavior::kKnockback) {
 		return;
 	}
 
 	isDead_ = true;
-
-
 }
 
 /*-------------------------------------
 更新
 --------------------------------*/
 void Player::Update() {
+
+	if (isKnockbackRequest_) {
+		behaviorRequest_ = Behavior::kKnockback;
+		isKnockbackRequest_ = false;
+	}
 
 	if (behaviorRequest_ != Behavior::kUnknown) {
 		// 振る舞いを変更する
@@ -407,6 +416,10 @@ void Player::Update() {
 			break;
 		case Behavior::kAttack:
 			BehaviorAttackInitialize();
+			break;
+
+		case Behavior::kKnockback:
+			BehaviorKnockbackInitialize();
 			break;
 		}
 
@@ -423,6 +436,10 @@ void Player::Update() {
 	case Behavior::kAttack:
 		BehaviorAttackUpdate();
 		break;
+	case Behavior::kKnockback:
+		BehaviorKnockbackUpdate();
+		break;
+
 	}
 }
 
@@ -466,24 +483,20 @@ void Player::BehaviorRootUpdate() {
 
 	// 行列の計算
 	UpdateWorldTransform(worldTransform_);
-
-	
-
 }
-
 
 /*-------------------------------------
 攻撃行動更新
 --------------------------------*/
 void Player::BehaviorAttackUpdate() {
 	// アニメーションの時間を定義
-	const uint32_t kChargeTime = 10;  
-	const uint32_t kDashTime = 3;     
-	const uint32_t kRecoveryTime = 20; 
+	const uint32_t kChargeTime = 10;
+	const uint32_t kDashTime = 3;
+	const uint32_t kRecoveryTime = 20;
 
 	// 攻撃用の速度
 	KamataEngine::Vector3 attackVelocity = {0.0f, 0.0f, 0.0f};
-	const float kDashSpeed = 1.5f; 
+	const float kDashSpeed = 1.5f;
 
 	// カウンターを先に進める
 	attackParameter_++;
@@ -503,7 +516,7 @@ void Player::BehaviorAttackUpdate() {
 		break;
 	}
 	case AttackPhase::kDash: {
-		
+
 		float t = static_cast<float>(attackParameter_) / kDashTime;
 		worldTransform_.scale_.z = EaseOut(0.3f, 1.3f, t);
 		worldTransform_.scale_.y = EaseIn(1.6f, 0.7f, t);
@@ -533,7 +546,7 @@ void Player::BehaviorAttackUpdate() {
 		}
 		break;
 	}
-	} 
+	}
 
 	// 衝突判定用に情報をセット
 	CollisionMapInfo collisionMapInfo;
@@ -553,10 +566,57 @@ void Player::BehaviorAttackUpdate() {
 	worldTransformAttack_.translation_ = worldTransform_.translation_;
 	worldTransformAttack_.rotation_ = worldTransform_.rotation_;
 
-	
 	UpdateWorldTransform(worldTransformAttack_);
 }
 
+/*-------------------------------------
+ノックバック行動
+--------------------------------*/
+void Player::BehaviorKnockbackUpdate() {
+	// フェーズごとの処理
+	switch (knockbackPhase_) {
+	case KnockbackPhase::kBlow:
+		// 摩擦で横移動を少しずつ減速させる
+		velocity_.x *= (1.0f - kAttenuation);
+
+		
+		if (!onGround_) {
+			velocity_.y -= 0.05f;
+		}
+
+		if (onGround_ && std::abs(velocity_.x) < 0.1f) {
+			knockbackPhase_ = KnockbackPhase::kRecover;
+			knockbackTimer_ = 0;
+		}
+		break;
+
+	case KnockbackPhase::kRecover:
+		
+		velocity_ = {0.0f, 0.0f, 0.0f};
+		knockbackTimer_++;
+
+		const uint32_t kRecoverTime = 20; // 硬直時間
+		if (knockbackTimer_ >= kRecoverTime) {
+			behaviorRequest_ = Behavior::kRoot; 
+		}
+		break;
+	}
+
+	// 当たり判定と移動処理
+	CollisionMapInfo collisionMapInfo;
+	collisionMapInfo.moveAmount = velocity_;
+
+	CheckMapCollision(collisionMapInfo);
+	velocity_ = collisionMapInfo.moveAmount;
+	CheckCeilingCollision(collisionMapInfo);
+	SwitchOnGround(collisionMapInfo);
+
+	worldTransform_.translation_.x += velocity_.x;
+	worldTransform_.translation_.y += velocity_.y;
+	worldTransform_.translation_.z += velocity_.z;
+
+	UpdateWorldTransform(worldTransform_);
+}
 
 /*--------------------
 描画
@@ -566,10 +626,9 @@ void Player::Draw() {
 	model_->Draw(worldTransform_, *camera_);
 
 	if (behavior_ == Behavior::kAttack) {
-		
+
 		if (modelAttack_) {
 			modelAttack_->Draw(worldTransformAttack_, *camera_);
 		}
 	}
-
 }

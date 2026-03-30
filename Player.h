@@ -34,6 +34,12 @@ public:
 		kUnknown,
 		kRoot,   
 		kAttack, 
+		kKnockback,
+	};
+
+	enum class KnockbackPhase {
+		kBlow,    
+		kRecover, 
 	};
 
 	enum class AttackPhase {
@@ -51,6 +57,10 @@ public:
 	void InputMove();
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
+	LRDirection GetLRDirection() const { return lrDirection_; }
+
+	void RequestKnockback() { isKnockbackRequest_ = true; }
 
 	//衝突応答
 	void OnCollision(const Enemy* enemy);
@@ -145,6 +155,13 @@ private:
 	// 攻撃行動初期化
 	void BehaviorAttackInitialize();
 	
+	bool isKnockbackRequest_ = false; 
+	KnockbackPhase knockbackPhase_ = KnockbackPhase::kBlow;
+	uint32_t knockbackTimer_ = 0;
+
+	// ノックバック用の関数
+	void BehaviorKnockbackInitialize();
+	void BehaviorKnockbackUpdate();
 
 	// uint32_t textureHandle_ = 0u;
 };

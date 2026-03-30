@@ -13,6 +13,8 @@
 class Enemy;
 class DeathParticles;
 class HitEffect;
+class ShieldEnemy;
+class GuardEffect;
 
 // ゲームシーン
 class GameScene {
@@ -64,6 +66,15 @@ private:
 
 	std::list<HitEffect*> hitEffects_;
 
+	KamataEngine::Model* modelGuardEffect_ = nullptr;
+
+	std::list<GuardEffect*> guardEffects_;
+
+	
+
+	// シールドのモデル
+	KamataEngine::Model* modelShieldEnemy_ = nullptr;
+	std::list<ShieldEnemy*> shieldEnemies_;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
@@ -97,4 +108,6 @@ private:
 
 	// フェーズ切り替えよう
 	void ChangePhase();
+
+	void CreateGuardEffect(const KamataEngine::Vector3& position);
 };
