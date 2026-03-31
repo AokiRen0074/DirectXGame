@@ -15,6 +15,7 @@ class DeathParticles;
 class HitEffect;
 class ShieldEnemy;
 class GuardEffect;
+class StageManager;
 
 // ゲームシーン
 class GameScene {
@@ -86,6 +87,9 @@ private:
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 	Fade* fade_ = nullptr;
 
+	// ステージマネージャー
+	StageManager* stageManager_ = nullptr;
+
 	std::unique_ptr<Skydome> skydome_;
 
 	// 終了フラグ
@@ -96,8 +100,7 @@ private:
 
 	public:
 	// 初期化
-	void Initialize();
-
+	    void Initialize(StageManager* stageDataManager);
 	// 更新
 	void Update();
 

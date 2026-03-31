@@ -3,6 +3,9 @@
 #include "Player.h"
 #include "TitleScene.h"
 #include <Windows.h>
+#include "StageManager.h"
+#include <fstream> 
+#include <sstream>
 
 
 
@@ -26,6 +29,34 @@ Scene scene = Scene::kUnknown;
 GameScene* gameScene = nullptr;
 TitleScene* titleScene = nullptr;
 
+StageManager* stageManager = nullptr;
+
+void LoadDebugSettings() {
+	// 起動設定ファイルを開く
+	std::ifstream file("DebugSettings.ini");
+	if (!file.is_open()) {
+		// ファイルが無ければデフォルトのまま何もしない
+		return;
+	}
+
+	std::string line;
+	// 1行ずつ読み込む
+	while (std::getline(file, line)) {
+		std::stringstream ss(line);
+		std::string key;
+		std::string value;
+
+		// 空白区切りで「キー」と「バリュー」を取得
+		ss >> key >> value;
+
+		// ステージ設定
+		if (key == "InitialStage") {
+			// ステージ名から番号を設定する
+			stageManager->SetCurrentStageIndexByName(value);
+		}
+	}
+	file.close();
+}
 
 void ChangeScene() {
 	switch (scene) {
@@ -38,7 +69,7 @@ void ChangeScene() {
 			titleScene = nullptr;
 			// 新シーンの生成と初期化
 			gameScene = new GameScene;
-			gameScene->Initialize();
+			gameScene->Initialize(stageManager);
 		}
 		break;
 	case Scene::kGame:
@@ -57,7 +88,7 @@ void ChangeScene() {
 			delete gameScene;
 			gameScene = nullptr;
 			gameScene = new GameScene;
-			gameScene->Initialize();
+			gameScene->Initialize(stageManager);
 		}
 		break;
 	}
@@ -97,7 +128,25 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 
+	// インスタンス
+	stageManager = new StageManager;
+	// ステージデータファイルを読み込む
+	stageManager->LoadStageDatas();
 
+	#ifdef _DEBUG
+	// デバッグ設定ファイル読み込み
+	LoadDebugSettings();
+
+	// デバッグ時はタイトルを飛ばしてゲームシーンから開始
+	scene = Scene::kGame;
+	gameScene = new GameScene;
+	gameScene->Initialize(stageManager);
+#else
+	// リリースビルド時は通常通りタイトルから
+	scene = Scene::kTitle;
+	titleScene = new TitleScene;
+	titleScene->Initialize();
+#endif
 
 	while (true) {
 		if (KamataEngine::Update()) {
@@ -130,6 +179,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	delete titleScene;
 	delete gameScene;
 	titleScene = nullptr;
+	delete stageManager;
 
 	KamataEngine::Finalize();
 

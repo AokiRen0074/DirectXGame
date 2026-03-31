@@ -7,6 +7,7 @@
 #include "HitEffect.h"
 #include "ShieldEnemy.h"
 #include "GuardEffect.h"
+#include "StageManager.h"
 #ifdef USE_IMGUI
 #include <imgui.h>
 #endif
@@ -77,13 +78,21 @@ GameScene::~GameScene() {
 }
 
 // 初期化
-void GameScene::Initialize() {
+void GameScene::Initialize(StageManager* stageDataManager) {
+	// 引数をメンバ変数に記録する
+	stageManager_ = stageDataManager;
 
 	/*---------------------------
 	マップチップ
 	------------------------------*/
 	mapChipField_ = new MapChipField;
-	mapChipField_->LoadMapChipCsv("Resources/Stage.csv");
+
+	// 現在のステージデータを取得する
+	const StageData& stageData = stageManager_->GetCurrentStageData();
+	// ステージファイルパスの生成
+	std::string stageFileName = "Resources/fields/" + stageData.name + ".csv";
+	// ステージファイルの読み込み
+	mapChipField_->LoadMapChipCsv(stageFileName);
 
 	/*-------------------------------
 	天球
