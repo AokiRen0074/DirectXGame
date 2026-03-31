@@ -7,6 +7,9 @@
 #include "HitEffect.h"
 #include "ShieldEnemy.h"
 #include "GuardEffect.h"
+#ifdef USE_IMGUI
+#include <imgui.h>
+#endif
 
 
 using namespace KamataEngine;
@@ -45,6 +48,8 @@ GameScene::~GameScene() {
 	delete cameraController_;
 	delete fade_;
 	delete modelHitEffect_;
+	delete modelPlayer_;
+	delete modelPlayerAttack_;
 
 	for (GuardEffect* effect : guardEffects_) {
 		delete effect;
@@ -91,49 +96,22 @@ void GameScene::Initialize() {
 	/*--------------------
 	プレイヤー
 	-------------------------*/
-	Model* playerModel = Model::CreateFromOBJ("player", true);
-	Model* playerAttackModel = Model::CreateFromOBJ("hit_effect", true);
+	modelPlayer_ = Model::CreateFromOBJ("player", true);
+	modelPlayerAttack_ = Model::CreateFromOBJ("hit_effect", true);
 	camera_.Initialize();
 	camera_.farZ = 2000.0f;
 	camera_.translation_ = {0.0f, 0.0f, -50.0f};
-	player_ = new Player();
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 0);
-	player_->Initialize(playerModel, playerAttackModel, &camera_, playerPosition);
-	player_->worldTransform_.translation_ = {5.0f, 3.0f, 0.0f};
-	//player_->worldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
-	player_->SetMapChipField(mapChipField_);
+	
 
 	/*-----------------------
 	エネミー
 	-----------------------------*/
-	Model* enemyModel = Model::CreateFromOBJ("enemy", true); 
-	for (int32_t i = 0; i < 3; ++i) {
-		Enemy* newEnemy = new Enemy();
-		
-		Vector3 enemyPosition = {15.0f + (i * 5.0f), 3.0f, 0.0f};
-		newEnemy->Initialize(enemyModel, &camera_, enemyPosition);
-		newEnemy->SetGameScene(this);
-
-		// リストに追加！
-		enemies_.push_back(newEnemy);
-	}
+	modelEnemy_ = Model::CreateFromOBJ("enemy", true);
 
 	/*-----------------------
 	シールドエネミー
 	-----------------------------*/
 	modelShieldEnemy_ = Model::CreateFromOBJ("shieldEnemy", true);
-
-	for (int32_t i = 0; i < 2; ++i) { 
-		ShieldEnemy* newShieldEnemy = new ShieldEnemy();
-	
-		Vector3 enemyPosition = {50.0f + (i * 7.0f), 3.0f, 0.0f};
-		newShieldEnemy->Initialize(modelShieldEnemy_, &camera_, enemyPosition);
-
-		newShieldEnemy->SetGameScene(this);
-
-		// リストに追加
-		shieldEnemies_.push_back(newShieldEnemy);
-	}
 
 	/*------------------------
 	デスパーティクル
@@ -141,7 +119,7 @@ void GameScene::Initialize() {
 	modelDeathParticle_ = Model::CreateFromOBJ("deathParticle", true);
 
 	deathParticles_ = new DeathParticles();
-	deathParticles_->Initialize(modelDeathParticle_, &camera_, player_->worldTransform_.translation_);
+	deathParticles_->Initialize(modelDeathParticle_, &camera_, {0.0f, 0.0f, 0.0f});
 
 	/*------------------------
 	ヒットエフェクト
@@ -156,6 +134,8 @@ void GameScene::Initialize() {
 	modelGuardEffect_ = Model::CreateFromOBJ("ring", true);
 	GuardEffect::SetModel(modelGuardEffect_);
 	GuardEffect::SetCamera(&camera_);
+
+	GenerateFieldObjects();
 
 	/*--------------------
 	追従カメラ
@@ -188,12 +168,12 @@ void GameScene::Initialize() {
 	debugCamera_->SetFarZ(2000.0f);
 
 
-	GenerateBlocks();
+	
 
 }
 
 
-void GameScene::GenerateBlocks() {
+void GameScene::GenerateFieldObjects() {
 	// 要素数
 	uint32_t numBlockVirtical = mapChipField_->GetNumBlockVirtical();
 	uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
@@ -204,21 +184,63 @@ void GameScene::GenerateBlocks() {
 		worldTransformBlocks_[i].resize(numBlockHorizontal);
 	}
 
-	// ブロックの生成
+	// フィールドオブジェクトの生成
 	for (uint32_t i = 0; i < numBlockVirtical; ++i) {
 		for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
-		
-			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
+
+			MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(j, i);
+
+			switch (mapChipType) {
+			case MapChipType::kBlock: {
 				WorldTransform* worldTransform = new WorldTransform();
 				worldTransform->Initialize();
-
-				//worldTransform->scale_ = {2.0f, 2.0f, 2.0f};
-
-
 				worldTransform->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
 				worldTransformBlocks_[i][j] = worldTransform;
-			} else {
+				break;
+			}
+			case MapChipType::kPlayer: {
+				assert(player_ == nullptr && "自キャラを二重に配置しようとしています");
+				// 自キャラの生成
+				player_ = new Player();
+				// 座標を指定してキャラの初期化
+				KamataEngine::Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(j, i);
+				player_->Initialize(modelPlayer_, modelPlayerAttack_, &camera_, playerPosition);
+				// 自キャラにマップチップ情報をセット
+				player_->SetMapChipField(mapChipField_);
+
+				// プレイヤーが入るマスにブロックのデータは不要なので nullptr
 				worldTransformBlocks_[i][j] = nullptr;
+				break;
+			}
+			case MapChipType::kEnemy: {
+				// サブIDを取得
+				uint8_t subID = mapChipField_->GetMapChipSubIDByIndex(j, i);
+				// 座標を取得
+				KamataEngine::Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(j, i);
+
+				if (subID == 0) {
+					//　サブIDが0普通の敵
+					Enemy* newEnemy = new Enemy();
+					newEnemy->Initialize(modelEnemy_, &camera_, enemyPosition);
+					newEnemy->SetGameScene(this);
+					enemies_.push_back(newEnemy);
+
+				} else if (subID == 1) {
+					// サブIDが1ならシールドエネミー
+					ShieldEnemy* newShieldEnemy = new ShieldEnemy();
+					newShieldEnemy->Initialize(modelShieldEnemy_, &camera_, enemyPosition);
+					newShieldEnemy->SetGameScene(this);
+					shieldEnemies_.push_back(newShieldEnemy);
+				}
+
+
+				worldTransformBlocks_[i][j] = nullptr;
+				break;
+			}
+			default:
+	
+				worldTransformBlocks_[i][j] = nullptr;
+				break;
 			}
 		}
 	}
@@ -323,6 +345,17 @@ void GameScene::CreateHitEffect(const KamataEngine::Vector3& position) {
 更新処理
 ----------------------------*/
 void GameScene::Update() {
+
+
+	#ifdef _DEBUG
+    // リロードボタン
+    //ImGui::Begin("Debug"); 
+    if (ImGui::Button("Reload")) {
+        reloadRequested_ = true;
+    }
+    ImGui::End();
+#endif
+
 	camera_.UpdateMatrix();
 	ChangePhase();
 

@@ -6,11 +6,22 @@
 
 using namespace KamataEngine;
 
+namespace {
+// マップチップ種別テーブル
+std::map<char, MapChipType> mapChipTypeTable = {
+    {'B', MapChipType::kBlock },
+    {'P', MapChipType::kPlayer},
+    {'E', MapChipType::kEnemy },
+};
+} 
+
 // マップチップデータをリセット
 void MapChipField::ResetMapChipData() {
 	mapChipData_.data.clear();
 	mapChipData_.data.resize(kNumBlockVirtical);
-	for (std::vector<MapChipType>& mapChipDataLine : mapChipData_.data) {
+
+
+	for (std::vector<MapChipDataUnit>& mapChipDataLine : mapChipData_.data) {
 		mapChipDataLine.resize(kNumBlockHorizontal);
 	}
 }
@@ -30,23 +41,39 @@ void MapChipField::LoadMapChipCsv(const std::string& filepath) {
 	mapChipCsv << file.rdbuf();
 	file.close();
 
-	// CSVからマップチップデータを読み込む
-	for (uint32_t i = 0; i < kNumBlockVirtical; i++) {
+// CSVからマップチップデータを読み込む
+	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
 		std::string line;
-		std::getline(mapChipCsv, line);
+		getline(mapChipCsv, line);
+		std::istringstream line_stream(line);
 
-		// 一行分の文字列をストリームに変換して解析しやすくなる
-		std::istringstream lineStream(line);
-
-		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
 			std::string word;
-			std::getline(lineStream, word, ',');
-			if (mapChipTable.contains(word)) {
-				mapChipData_.data[i][j] = mapChipTable[word];
+			getline(line_stream, word, ',');
+
+			// 空白の場合はスキップ
+			if (word.empty()) {
+				continue;
 			}
+
+			
+			if (!mapChipTypeTable.contains(word[kChipType])) {
+				continue;
+			}
+
+			// 先頭文字でマップチップのタイプを判別して格納
+			mapChipData_.data[i][j].type = mapChipTypeTable[word[kChipType]];
+
+			// サブIDを含まない場合はスキップ
+			if (word.size() <= kChipSubID) {
+				continue;
+			}
+
+			mapChipData_.data[i][j].subID = static_cast<uint8_t>(word[kChipSubID] - '0');
+
+			
 		}
 	}
-
 }
 
 MapChipType MapChipField::GetMapChipTypeByIndex(uint32_t xIndex, uint32_t yIndex) {
@@ -61,7 +88,7 @@ MapChipType MapChipField::GetMapChipTypeByIndex(uint32_t xIndex, uint32_t yIndex
 	}
 
 	// 範囲内なら、その座標のマップチップのデータを返す
-	return mapChipData_.data[yIndex][xIndex];
+	return mapChipData_.data[yIndex][xIndex].type;
 }
 
 Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) {
@@ -95,4 +122,15 @@ MapChipField::Rect MapChipField::GetRectByIndex(uint32_t xIndex, uint32_t yIndex
 	return rect;
 
 
+}
+
+uint8_t MapChipField::GetMapChipSubIDByIndex(uint32_t xIndex, uint32_t yIndex) {
+	if (xIndex < 0 || xIndex >= kNumBlockHorizontal) {
+		return 0; // 範囲外なら0を返す
+	}
+	if (yIndex < 0 || yIndex >= kNumBlockVirtical) {
+		return 0; // 範囲外なら0を返す
+	}
+	// 構造体の中のsubIDだけを返す
+	return mapChipData_.data[yIndex][xIndex].subID;
 }

@@ -4,6 +4,8 @@
 #include "TitleScene.h"
 #include <Windows.h>
 
+
+
 using namespace KamataEngine;
 DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
@@ -12,6 +14,10 @@ enum class Scene {
 	kTitle,
 	kGame,
 };
+
+ImGuiManager* imguiManager = ImGuiManager::GetInstance();
+
+
 
 // 現在シーン
 Scene scene = Scene::kUnknown;
@@ -46,6 +52,12 @@ void ChangeScene() {
 			// 新シーンの生成と初期化
 			titleScene = new TitleScene;
 			titleScene->Initialize();
+		} else if (gameScene->IsReloadRequested()) {
+			// シーンリロード
+			delete gameScene;
+			gameScene = nullptr;
+			gameScene = new GameScene;
+			gameScene->Initialize();
 		}
 		break;
 	}
@@ -81,6 +93,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	scene = Scene::kTitle;
 	titleScene = new TitleScene;
 	titleScene->Initialize();
+	imguiManager->Initialize();
 
 
 
@@ -90,6 +103,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		if (KamataEngine::Update()) {
 			break;
 		}
+
+		imguiManager->Begin();
 
 		ChangeScene();
 		UpdateScene();
@@ -102,9 +117,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		KamataEngine::Model::PostDraw();
 
+		imguiManager->End();
+		imguiManager->Draw();
+
 		// 描画終了
 		dxCommon->PostDraw();
 	}
+
+
 
 	// ゲームシーンの解放
 	delete titleScene;

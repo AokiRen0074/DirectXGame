@@ -70,7 +70,11 @@ private:
 
 	std::list<GuardEffect*> guardEffects_;
 
-	
+	// 普通の敵
+	KamataEngine::Model* modelEnemy_ = nullptr;
+
+	KamataEngine::Model* modelPlayer_ = nullptr;
+	KamataEngine::Model* modelPlayerAttack_ = nullptr;
 
 	// シールドのモデル
 	KamataEngine::Model* modelShieldEnemy_ = nullptr;
@@ -87,6 +91,9 @@ private:
 	// 終了フラグ
 	bool finished_ = false;
 
+	// ほっとリロード要求
+	bool reloadRequested_ = false;
+
 	public:
 	// 初期化
 	void Initialize();
@@ -97,7 +104,8 @@ private:
 	// 描画
 	void Draw();
 
-	void GenerateBlocks();
+
+void GenerateFieldObjects();
 
 	// 全ての当たり判定を行う
 	void CheckAllCollisions();
@@ -110,4 +118,7 @@ private:
 	void ChangePhase();
 
 	void CreateGuardEffect(const KamataEngine::Vector3& position);
+	
+	
+	bool IsReloadRequested() const { return reloadRequested_; }
 };

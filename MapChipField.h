@@ -5,6 +5,8 @@
 enum class MapChipType {
 	kBlank, // 空白
 	kBlock, // ブロック
+	kPlayer,// プレイヤー
+	kEnemy,// 敵
 };
 
 // マップチップのデータ
@@ -12,6 +14,7 @@ struct MapChipData {
 	std::vector<std::vector<MapChipType>> data;
 };
 
+/*--
 namespace {
 std::map<std::string, MapChipType> mapChipTable = {
     {"0", MapChipType::kBlank},
@@ -19,6 +22,11 @@ std::map<std::string, MapChipType> mapChipTable = {
 };
 
 }
+*/
+
+
+
+
 
 class MapChipField {
 public:
@@ -35,7 +43,19 @@ public:
 		float top;
 	};
 
+	enum MapChipCharIndex {
+		kChipType = 0, 
+		kChipSubID = 1, 
+	};
 
+	struct MapChipDataUnit {
+		MapChipType type;
+		uint8_t subID;
+	};
+
+	struct MapChipData {
+		std::vector<std::vector<MapChipDataUnit>> data; // 中身を MapChipType から MapChipDataUnit に変更
+	};
 
 	// 1ブロックのサイズ
 	static inline const float kBlockWidth = 1.0f;
@@ -55,4 +75,5 @@ public:
 	uint32_t GetNumBlockVirtical() const { return kNumBlockVirtical; }
 	uint32_t GetNumBlockHorizontal() const { return kNumBlockHorizontal; }
 	Rect GetRectByIndex(uint32_t xIndex, uint32_t yIndex);
+	uint8_t GetMapChipSubIDByIndex(uint32_t xIndex, uint32_t yIndex);
 };
