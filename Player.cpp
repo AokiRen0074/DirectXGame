@@ -384,7 +384,7 @@ AABB Player::GetAABB() {
 衝突応答
 ---------------------*/
 
-void Player::OnCollision(const Enemy* enemy) {
+void Player::OnCollision(const BaseEnemy* enemy) {
 	(void)*enemy;
 
 	if (IsAttack() || behavior_ == Behavior::kKnockback) {

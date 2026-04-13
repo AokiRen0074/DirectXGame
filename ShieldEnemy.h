@@ -1,11 +1,12 @@
 #pragma once
 #include "AABB.h"
 #include "KamataEngine.h"
+#include "BaseEnemy.h"
 
 class Player;
 class GameScene;
 
-class ShieldEnemy {
+class ShieldEnemy final : public BaseEnemy {
 public:
 	enum class Behavior {
 		kUnknown,
@@ -20,15 +21,15 @@ public:
 	};
 
 	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
-	void Update();
-	void Draw();
+	void Update() override;
+	void Draw() override;
 
 	// 衝突応答
-	void OnCollision( Player* player);
+	void OnCollision(const Player* player) override;
 
-	bool IsDead() const { return isDead_; }
+bool IsDead() const override { return isDead_; }
 
-	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+	bool IsCollisionDisabled() const override { return isCollisionDisabled_; }
 
 	// セッター
 	void SetGameScene(GameScene* gameScene) { gameScene_ = gameScene; }
@@ -37,7 +38,7 @@ public:
 	KamataEngine::Vector3 GetWorldPosition();
 
 	// AABBを取得
-	AABB GetAABB();
+	AABB GetAABB() override;
 
 private:
 	KamataEngine::WorldTransform worldTransform_;

@@ -30,9 +30,10 @@ static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 // デストラクタ
 GameScene::~GameScene() {
 	delete player_;
-	for (Enemy* enemy : enemies_) {
+	for (BaseEnemy* enemy : enemies_) {
 		delete enemy;
 	}
+	enemies_.clear();
 
 	if (deathParticles_) {
 		delete deathParticles_;
@@ -222,27 +223,20 @@ void GameScene::GenerateFieldObjects() {
 				break;
 			}
 			case MapChipType::kEnemy: {
-				// サブIDを取得
 				uint8_t subID = mapChipField_->GetMapChipSubIDByIndex(j, i);
-				// 座標を取得
 				KamataEngine::Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(j, i);
 
 				if (subID == 0) {
-					//　サブIDが0普通の敵
 					Enemy* newEnemy = new Enemy();
 					newEnemy->Initialize(modelEnemy_, &camera_, enemyPosition);
 					newEnemy->SetGameScene(this);
-					enemies_.push_back(newEnemy);
-
+					enemies_.push_back(newEnemy); // 親のリストに追加！
 				} else if (subID == 1) {
-					// サブIDが1ならシールドエネミー
 					ShieldEnemy* newShieldEnemy = new ShieldEnemy();
 					newShieldEnemy->Initialize(modelShieldEnemy_, &camera_, enemyPosition);
 					newShieldEnemy->SetGameScene(this);
-					shieldEnemies_.push_back(newShieldEnemy);
+					enemies_.push_back(newShieldEnemy); // 親のリストに追加！
 				}
-
-
 				worldTransformBlocks_[i][j] = nullptr;
 				break;
 			}
@@ -265,41 +259,16 @@ void GameScene::CheckAllCollisions() {
 
 #pragma region 自キャラと敵キャラの当たり判定
 	if (player_) {
-		// 自キャラの座標
 		aabb1 = player_->GetAABB();
-
 		// 自キャラと敵全ての当たり判定
-		for (Enemy* enemy : enemies_) {
-
-			if (enemy->IsCollisionDisabled()) {
+		for (BaseEnemy* enemy : enemies_) {
+			if (enemy->IsCollisionDisabled())
 				continue;
-			}
-
-			// 敵の座標
 			aabb2 = enemy->GetAABB();
-
-			// AABB同士の交差判定
 			if (IsCollision(aabb1, aabb2)) {
-				
 				player_->OnCollision(enemy);
 				enemy->OnCollision(player_);
 			}
-		}
-	}
-
-
-	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
-
-		if (shieldEnemy->IsCollisionDisabled()) {
-			continue;
-		}
-
-		aabb2 = shieldEnemy->GetAABB();
-
-		// AABB同士の交差判定
-		if (IsCollision(aabb1, aabb2)) {
-			player_->OnCollision((Enemy*)shieldEnemy); 
-			shieldEnemy->OnCollision(player_);
 		}
 	}
 #pragma endregion
@@ -419,10 +388,18 @@ void GameScene::UpdateGamePlayPhase() {
 		cameraController_->Update();
 	}
 
-	// 敵の更新
-	for (Enemy* enemy : enemies_) {
+for (BaseEnemy* enemy : enemies_) {
 		enemy->Update();
 	}
+
+
+	enemies_.remove_if([](BaseEnemy* enemy) {
+		if (enemy->IsDead()) {
+			delete enemy;
+			return true;
+		}
+		return false;
+	});
 
 	// ヒットエフェクトの更新
 	for (HitEffect* effect : hitEffects_) {
@@ -457,18 +434,6 @@ void GameScene::UpdateGamePlayPhase() {
 		return false;
 	});
 
-	// シールドエネミーの更新
-	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
-		shieldEnemy->Update();
-	}
-
-	shieldEnemies_.remove_if([](ShieldEnemy* shieldEnemy) {
-		if (shieldEnemy->IsDead()) {
-			delete shieldEnemy;
-			return true;
-		}
-		return false;
-	});
 
 	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
@@ -508,13 +473,10 @@ void GameScene::UpdateGamePlayPhase() {
 // デス演出フェーズの更新処理
 void GameScene::UpdateDeathPhase() {
 	// 敵の更新
-	for (Enemy* enemy : enemies_) {
+	for (BaseEnemy* enemy : enemies_) {
 		enemy->Update();
 	}
 
-	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
-		shieldEnemy->Update();
-	}
 
 	// デスパーティクルの更新（デスフェーズのみ）
 	if (deathParticles_) {
@@ -570,8 +532,7 @@ void GameScene::Draw() {
 	if (player_ != nullptr && !player_->isDead_) {
 		player_->Draw();
 	}
-
-	for (Enemy* enemy : enemies_) {
+	for (BaseEnemy* enemy : enemies_) {
 		enemy->Draw();
 	}
 
@@ -581,10 +542,6 @@ void GameScene::Draw() {
 
 	for (HitEffect* effect : hitEffects_) {
 		effect->Draw();
-	}
-
-	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
-		shieldEnemy->Draw();
 	}
 
 	for (GuardEffect* effect : guardEffects_) {

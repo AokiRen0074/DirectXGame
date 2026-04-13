@@ -4,6 +4,7 @@
 
 class MapChipField;
 class Enemy;
+class BaseEnemy;
 
 class Player {
 public:
@@ -63,7 +64,7 @@ public:
 	void RequestKnockback() { isKnockbackRequest_ = true; }
 
 	//衝突応答
-	void OnCollision(const Enemy* enemy);
+	void OnCollision(const BaseEnemy* enemy);
 
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
 	

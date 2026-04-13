@@ -9,6 +9,8 @@
 #include <list>
 #include "Fade.h"
 
+#include "BaseEnemy.h"
+
 
 class Enemy;
 class DeathParticles;
@@ -33,7 +35,7 @@ public:
 	void CreateHitEffect(const KamataEngine::Vector3& position);
 
 	Player* player_ = nullptr;
-	std::list<Enemy*> enemies_;
+	std::list<BaseEnemy*> enemies_;
 	KamataEngine::Camera camera_;
 	MapChipField* mapChipField_;
 	CameraController* cameraController_ = nullptr;
