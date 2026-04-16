@@ -11,6 +11,7 @@ private:
 public:
 	~GameScene();
 
+
 	// 初期化
 	void Initialize();
 
