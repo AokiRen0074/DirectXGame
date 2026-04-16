@@ -4,10 +4,12 @@
 
 // ゲームシーン
 class GameScene {
-public:
-
+private:
 	Player* player_ = nullptr;
-	KamataEngine::Camera camera_; 
+	KamataEngine::Camera camera_;
+
+public:
+	~GameScene();
 
 	// 初期化
 	void Initialize();

@@ -2,6 +2,10 @@
 
 using namespace KamataEngine;
 
+GameScene::~GameScene() {
+	delete player_; 
+}
+
 // 初期化
 void GameScene::Initialize() {
 	Model* model = Model::CreateFromOBJ("cube", true);
