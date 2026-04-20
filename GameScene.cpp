@@ -22,7 +22,6 @@ GameScene::~GameScene() {
 
 	delete model_;
 	delete debugCamera_;
-	delete modelSkydome_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -46,7 +45,6 @@ void GameScene::Initialize() {
 	skydome_ = std::make_unique<Skydome>();
 	skydome_->camera_ = &camera_;
 	skydome_->Initialize();
-	modelSkydome_ = Model::CreateFromOBJ("skydome", true); 
 
 	/*--------------------
 	プレイヤー

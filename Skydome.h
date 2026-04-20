@@ -12,9 +12,11 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	// モデル
 	KamataEngine::Model* model_ = nullptr;
-	KamataEngine::Model* modelSkydome_ = nullptr;
 
 public:
+
+	~Skydome();
+
 	void Initialize();
 
 	void Update();

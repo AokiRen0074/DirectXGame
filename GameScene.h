@@ -21,8 +21,6 @@ private:
 	// 3dモデル
 	KamataEngine::Model* model_ = nullptr;
 
-	// 天球3Dモデル
-	KamataEngine::Model* modelSkydome_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 

@@ -2,6 +2,10 @@
 
 using namespace KamataEngine;
 
+Skydome::~Skydome() {
+	delete model_;
+}
+
 void Skydome::Initialize() {
 
 	model_ = Model::CreateFromOBJ("skydome", true);
