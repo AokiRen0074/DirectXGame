@@ -17,6 +17,7 @@ void GameScene::Initialize() {
 	player_->Initialize(model, textureHandle, &camera_);
 }
 
+
 // 更新
 void GameScene::Update() {
 	camera_.UpdateMatrix();
