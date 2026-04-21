@@ -14,6 +14,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	KamataEngine::Initialize(L"LC1B_01_アオキ_レン_AL2");
 
+
 	GameScene* gameScene = new GameScene();
 	gameScene->Initialize();
 
