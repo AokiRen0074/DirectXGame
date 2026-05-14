@@ -1,7 +1,6 @@
 #include "Bloom.h"
 #include <cassert>
 
-// KamataEngineのDirectXCommonからデバイスを取得するヘルパー関数
 ID3D12Device* Bloom::GetDevice() { return KamataEngine::DirectXCommon::GetInstance()->GetDevice(); }
 
 void Bloom::Initialize(int windowWidth, int windowHeight) {
@@ -9,13 +8,13 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 	assert(device != nullptr);
 
 	// ==========================================
-	// 1. HDR用テクスチャリソースの設定（ヒープ設定）
+	// HDR用テクスチャリソースの設定
 	// ==========================================
 	D3D12_HEAP_PROPERTIES heapProps{};
-	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT; // GPUのみがアクセスする高速なメモリ
+	heapProps.Type = D3D12_HEAP_TYPE_DEFAULT; 
 
 	// ==========================================
-	// 2. リソースの設定（どんなキャンバスにするか）
+	// リソースの設定
 	// ==========================================
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -23,12 +22,12 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 	resourceDesc.Height = windowHeight; // 画面の高さ
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
-	resourceDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // ★重要：1.0以上の色を保存できるHDRフォーマット
+	resourceDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // 1.0以上の色を保存できるHDRフォーマット
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // 描画対象として使うフラグ
 
 	// ==========================================
-	// 3. クリアカラーの設定（初期化時の色）
+	// クリアカラーの設定
 	// ==========================================
 	D3D12_CLEAR_VALUE clearValue{};
 	clearValue.Format = resourceDesc.Format;
@@ -38,13 +37,13 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 	clearValue.Color[3] = 1.0f; // A
 
 	// ==========================================
-	// 4. リソースの生成
+	// リソースの生成
 	// ==========================================
 	HRESULT hr = device->CreateCommittedResource(
 	    &heapProps, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-	    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は描画対象として使う状態にしておく
+	    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は描画対象として使う状態
 	    &clearValue, IID_PPV_ARGS(&hdrTextureResource_));
-	assert(SUCCEEDED(hr)); // エラーが起きたらここでプログラムを止める（バグ防止）
+	assert(SUCCEEDED(hr)); 
 
 	// ==========================================
 	// 5. デスクリプタヒープの作成
