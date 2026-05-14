@@ -167,6 +167,7 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NeonCube.cpp" />
+    <ClCompile Include="NeonImage.cpp" />
     <ClCompile Include="NeonSign.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +178,15 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Compute</ShaderType>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CSMain</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Luminance.PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
@@ -229,6 +239,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Texture.PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <None Include="packages.config" />
     <None Include="Resources\shaders\Obj.hlsli" />
     <None Include="Resources\shaders\Primitive.hlsli" />
     <None Include="Resources\shaders\Shape.hlsli">
@@ -313,9 +332,17 @@
     <ClInclude Include="Bloom.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="NeonCube.h" />
+    <ClInclude Include="NeonImage.h" />
     <ClInclude Include="NeonSign.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\directxtex_desktop_win10.2026.5.8.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('packages\directxtex_desktop_win10.2026.5.8.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>このプロジェクトは、このコンピューター上にない NuGet パッケージを参照しています。それらのパッケージをダウンロードするには、[NuGet パッケージの復元] を使用します。詳細については、http://go.microsoft.com/fwlink/?LinkID=322105 を参照してください。見つからないファイルは {0} です。</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\directxtex_desktop_win10.2026.5.8.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtex_desktop_win10.2026.5.8.1\build\native\directxtex_desktop_win10.targets'))" />
+  </Target>
 </Project>

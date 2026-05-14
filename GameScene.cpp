@@ -1,4 +1,7 @@
 #include "GameScene.h"
+#include <imgui.h>
+#include <cctype>
+
 
 using namespace KamataEngine;
 
@@ -15,44 +18,311 @@ void GameScene::Initialize() {
 	bloom_ = new Bloom();
 	bloom_->Initialize(1280, 720);
 
-	// 1本目：左の縦棒 (幅Xは1.0のまま！)
+
+	/*--------------------------------
+	ネオンの画像
+	---------------------------------------*/
+	/*
+	NeonImage* image1 = new NeonImage();
+	image1->Initialize(L"sample2.png");
+
+	image1->SetTransform({0.0f, 0.0f, 0.0f}, 2.5f, 0.0f);
+	image1->SetLuminanceSettings(0.8f, 12.0f);
+	neonImages_.push_back(image1);
+	*/
+
+	/*
+	NeonImage* image2 = new NeonImage();
+	image2->Initialize(L"sample3.png");
+
+	image2->SetTransform({3.0f, 0.0f, 0.0f}, 2.0f, 0.0f);
+	image2->SetLuminanceSettings(0.6f, 10.0f);
+	neonImages_.push_back(image2);
+
+
+	NeonImage* neonTextH = new NeonImage();
+	neonTextH->Initialize(L"H.png"); // ペイントソフトで作った文字画像
+	neonTextH->SetTransform({0.0f, 3.0f, 0.0f}, 1.0f, 0.0f);
+
+	neonTextH->SetLuminanceSettings(0.8f, 10.0f);
+
+	neonImages_.push_back(neonTextH);
+	*/
+
+
+
+
+	/*
+	// 左の縦棒
 	NeonSign* leftBar = new NeonSign();
 	leftBar->Initialize();
 	leftBar->SetTransform({-1.5f, 0.0f, 0.0f}, {1.0f, 2.0f, 1.0f}, 0.0f);
 	neonSigns_.push_back(leftBar);
 
-	// 2本目：右の縦棒 (幅Xは1.0のまま！)
+	// 右の縦棒
 	NeonSign* rightBar = new NeonSign();
 	rightBar->Initialize();
 	rightBar->SetTransform({1.5f, 0.0f, 0.0f}, {1.0f, 2.0f, 1.0f}, 0.0f);
 	neonSigns_.push_back(rightBar);
 
-	// 3本目：真ん中の横棒
-	// ★ 縦棒と同じ形を作り、Z軸で「90度（1.57ラジアン）」回転させて横に寝かせる！
+	// 真ん中の横棒
 	NeonSign* middleBar = new NeonSign();
 	middleBar->Initialize();
 	middleBar->SetTransform({0.0f, 0.0f, 0.0f}, {1.0f, 1.6f, 1.0f}, 1.57f);
 	neonSigns_.push_back(middleBar);
+	*/
+
+	PrintNeon("NEON", -2.0f, 0.0f,0.5f);
+	
 }
 
 void GameScene::Update() {
+
+
 	// 全てのネオンを更新
 	for (NeonSign* sign : neonSigns_) {
 		sign->Update();
 
 	}
+
+	for (NeonImage* img : neonImages_) {
+		img->Update();
+	}
 }
 
 void GameScene::Draw() {
+
+
+
+for (NeonImage* img : neonImages_) {
+		img->Draw();
+	}
+
 	bloom_->PreDraw();
 
-	// ★ HDRキャンバスに全てのネオンを描画
+
+
+
+for (NeonImage* img : neonImages_) {
+		img->DrawLuminance();
+	}
+
+ //HDRキャンバスに全てのネオンを描画
 	for (NeonSign* sign : neonSigns_) {
-		sign->Draw();
+	sign->Draw();
 	}
 
 	bloom_->PostDraw();
 
 	bloom_->Execute();
 	bloom_->DrawResult();
+}
+
+// ==========================================
+// 指定された文字列を、自動で横に並べて配置する関数
+// ==========================================
+void GameScene::PrintNeon(const std::string& text, float startX, float startY, float scale) {
+	float currentX = startX;
+
+	// ★変更：文字の間隔も、指定されたサイズ（scale）に合わせて縮小・拡大する！
+	float letterSpacing = 2.0f * scale;
+
+	for (char c : text) {
+		if (c == ' ') {
+			currentX += letterSpacing;
+			continue;
+		}
+
+		// ★変更：工場にもサイズ（scale）を伝える
+		CreateLetter(c, currentX, startY, scale);
+
+		currentX += letterSpacing;
+	}
+}
+
+
+
+// ==========================================
+// 1文字ごとの「棒の組み合わせ」を定義する工場
+// ==========================================
+void GameScene::CreateLetter(char c, float baseX, float baseY, float scale) {
+
+	// ==========================================
+	// 💡 魔法のラムダ式を改造
+	// ==========================================
+	auto addBar = [&](float ox, float oy, float len, float rot) {
+		NeonSign* bar = new NeonSign();
+		bar->Initialize();
+
+		// ★変更：位置のズレ(ox, oy) と、棒の太さ・長さ(1.0f, len) のすべてに scale を掛ける！
+		bar->SetTransform({baseX + (ox * scale), baseY + (oy * scale), 0.0f}, {1.0f * scale, len * scale, 1.0f}, rot);
+		neonSigns_.push_back(bar);
+	};
+
+	// ==========================================
+	// 💡 よく使う定型パーツ（デジタル時計のようなセグメント）
+	// ==========================================
+	auto vl = [&]() { addBar(-0.75f, 0.0f, 2.0f, 0.0f); };   // 左の縦棒（全体）
+	auto vr = [&]() { addBar(0.75f, 0.0f, 2.0f, 0.0f); };    // 右の縦棒（全体）
+	auto vm = [&]() { addBar(0.0f, 0.0f, 2.0f, 0.0f); };     // 中央の縦棒（全体）
+	auto ht = [&]() { addBar(0.0f, 1.0f, 1.5f, 1.57f); };    // 上の横棒
+	auto hm = [&]() { addBar(0.0f, 0.0f, 1.5f, 1.57f); };    // 真ん中の横棒
+	auto hb = [&]() { addBar(0.0f, -1.0f, 1.5f, 1.57f); };   // 下の横棒
+	auto vtl = [&]() { addBar(-0.75f, 0.5f, 1.0f, 0.0f); };  // 左上の短い縦棒
+	auto vbl = [&]() { addBar(-0.75f, -0.5f, 1.0f, 0.0f); }; // 左下の短い縦棒
+	auto vtr = [&]() { addBar(0.75f, 0.5f, 1.0f, 0.0f); };   // 右上の短い縦棒
+	auto vbr = [&]() { addBar(0.75f, -0.5f, 1.0f, 0.0f); };  // 右下の短い縦棒
+
+	// 小文字が入力されても、大文字として処理するように変換
+	c = (char)std::toupper(c);
+
+	// ==========================================
+	// 💡 A〜Z の設計図（パーツを組み合わせるだけ！）
+	// ==========================================
+	switch (c) {
+	case 'A':
+		vl();
+		vr();
+		ht();
+		hm();
+		break;
+	case 'B':
+		vl();
+		ht();
+		hm();
+		hb();
+		vtr();
+		vbr();
+		break; // カクカクのB
+	case 'C':
+		vl();
+		ht();
+		hb();
+		break;
+	case 'D':
+		vl();
+		vr();
+		ht();
+		hb();
+		break; // Oと同じ（ブロック体）
+	case 'E':
+		vl();
+		ht();
+		hm();
+		hb();
+		break;
+	case 'F':
+		vl();
+		ht();
+		hm();
+		break;
+	case 'G':
+		vl();
+		ht();
+		hb();
+		vbr();
+		addBar(0.375f, 0.0f, 0.75f, 1.57f);
+		break; // Gの右下の折り返し
+	case 'H':
+		vl();
+		vr();
+		hm();
+		break;
+	case 'I':
+		vm();
+		ht();
+		hb();
+		break; // 上下にヒゲがあるI
+	case 'J':
+		vr();
+		hb();
+		vbl();
+		break;
+	case 'K':
+		vl();
+		addBar(0.0f, 0.5f, 1.8f, -0.98f);
+		addBar(0.0f, -0.5f, 1.8f, 0.98f);
+		break; // 斜め線
+	case 'L':
+		vl();
+		hb();
+		break;
+	case 'M':
+		vl();
+		vr();
+		addBar(-0.375f, 0.5f, 1.25f, 0.64f);
+		addBar(0.375f, 0.5f, 1.25f, -0.64f);
+		break;
+	case 'N':
+		vl();
+		vr();
+		addBar(0.0f, 0.0f, 2.5f, 0.64f);
+		break; // 斜め線(N)
+	case 'O':
+		vl();
+		vr();
+		ht();
+		hb();
+		break;
+	case 'P':
+		vl();
+		vtr();
+		ht();
+		hm();
+		break;
+	case 'Q':
+		vl();
+		vr();
+		ht();
+		hb();
+		addBar(0.4f, -0.6f, 1.2f, -0.78f);
+		break; // Oに右下のヒゲ
+	case 'R':
+		vl();
+		vtr();
+		ht();
+		hm();
+		addBar(0.375f, -0.5f, 1.25f, 0.64f);
+		break;
+	case 'S':
+		ht();
+		hm();
+		hb();
+		vtl();
+		vbr();
+		break;
+	case 'T':
+		ht();
+		vm();
+		break;
+	case 'U':
+		vl();
+		vr();
+		hb();
+		break;
+	case 'V':
+		addBar(-0.375f, 0.0f, 2.13f, 0.36f);
+		addBar(0.375f, 0.0f, 2.13f, -0.36f);
+		break;
+	case 'W':
+		vl();
+		vr();
+		addBar(-0.375f, -0.5f, 1.25f, -0.64f);
+		addBar(0.375f, -0.5f, 1.25f, 0.64f);
+		break;
+	case 'X':
+		addBar(0.0f, 0.0f, 2.5f, 0.64f);
+		addBar(0.0f, 0.0f, 2.5f, -0.64f);
+		break; // クロス
+	case 'Y':
+		addBar(-0.375f, 0.5f, 1.25f, 0.64f);
+		addBar(0.375f, 0.5f, 1.25f, -0.64f);
+		addBar(0.0f, -0.5f, 1.0f, 0.0f);
+		break;
+	case 'Z':
+		ht();
+		hb();
+		addBar(0.0f, 0.0f, 2.5f, -0.64f);
+		break; // 斜め線(Z)
+	}
 }

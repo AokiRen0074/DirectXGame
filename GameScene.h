@@ -4,6 +4,7 @@
 #include "NeonCube.h"
 #include "NeonSign.h"
 #include <vector>
+#include "NeonImage.h"
 
 class GameScene {
 public:
@@ -13,9 +14,15 @@ public:
 	void Update();
 	void Draw();
 
+void PrintNeon(const std::string& text, float startX, float startY, float scale);
+	void CreateLetter(char c, float baseX, float baseY, float scale);
+
 private:
 	Bloom* bloom_ = nullptr; // ★追加
 	NeonCube* neonCube_ = nullptr;
 	NeonSign* neonSign_ = nullptr;
+	NeonImage* neonImage_ = nullptr;
 	std::vector<NeonSign*> neonSigns_;
+	std::vector<NeonImage*> neonImages_;
+
 };

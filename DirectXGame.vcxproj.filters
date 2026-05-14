@@ -33,6 +33,9 @@
     <ClCompile Include="NeonSign.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="NeonImage.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\SpritePS.hlsl">
@@ -70,6 +73,8 @@
     <FxCompile Include="PostProcess.PS.hlsl" />
     <FxCompile Include="NeonObject.PS.hlsl" />
     <FxCompile Include="NeonObject.VS.hlsl" />
+    <FxCompile Include="Luminance.PS.hlsl" />
+    <FxCompile Include="Texture.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\shaders\Sprite.hlsli">
@@ -87,6 +92,7 @@
     <None Include="Resources\shaders\Terrain.hlsli">
       <Filter>シェーダー ファイル</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameScene.h">
@@ -99,6 +105,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="NeonSign.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="NeonImage.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

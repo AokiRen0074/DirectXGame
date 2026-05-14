@@ -4,7 +4,7 @@ cbuffer NeonSettings : register(b1)
     float intensity;
     float radius;
     float softness;
-    float tubeLength; // ★追加：C++の length と繋がる変数
+    float tubeLength; 
 };
 
 struct VSOutput
@@ -18,10 +18,6 @@ float4 main(VSOutput input) : SV_TARGET
     // UVを -1.0 ～ 1.0 に変換
     float2 p = input.uv * 2.0f - 1.0f;
 
-    // ==========================================
-    // ★最大のポイント：Y座標に長さを掛けて「空間の歪み」を直す！
-    // これにより、どんなに細長い板でも、端っこが真ん丸になります。
-    // ==========================================
     p.y *= tubeLength;
 
     // 板の端っこから少し内側（0.15くらい）で線分を止めて、光の余白を作る
