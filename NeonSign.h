@@ -4,6 +4,15 @@
 #include <d3d12.h>
 #include <wrl.h>
 
+struct ConstBufferDataNeon {
+	DirectX::XMFLOAT4 neonColor; // float4
+	float intensity;             // float
+	float radius;                // float
+	float softness;              // float
+	float tubeLength;           
+};
+
+
 class NeonSign {
 public:
 	void Initialize();
@@ -12,6 +21,10 @@ public:
 
 	// ステップ2で使うための設定関数
 	void SetTransform(DirectX::XMFLOAT3 pos, DirectX::XMFLOAT3 scale, float rotZ);
+
+void SetTubeLength(float length) { tubeLength_ = length; }
+
+
 
 private:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
@@ -49,4 +62,6 @@ private:
 	DirectX::XMFLOAT3 scale_ = {1, 1, 1};
 	float rotationY_ = 0.0f;
 	float rotationZ_ = 0.0f;
+
+	float tubeLength_ = 1.0f;
 };

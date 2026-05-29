@@ -1,5 +1,6 @@
-#include "NeonSign.h"
+#include "NeonPlayer.h"
 #include <cassert>
+#include <cmath> // 算術計算(sin, cos, tan)用に追加
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3d12.lib")
@@ -7,13 +8,13 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 using namespace Microsoft::WRL;
-using namespace DirectX;
 
-void NeonSign::Initialize() {
+
+void NeonPlayer::Initialize() {
 	ID3D12Device* device = KamataEngine::DirectXCommon::GetInstance()->GetDevice();
 	HRESULT hr;
 
-	// --- 1. 頂点・インデックスバッファ作成 ---
+	//インデックスバッファ作成 ---
 	Vertex vertices[] = {
 	    {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
 	    {{-1.0f, 1.0f, 0.0f},  {0.0f, 0.0f}},
@@ -74,9 +75,8 @@ void NeonSign::Initialize() {
 
 	// --- 4. シェーダー読み込み ---
 	ComPtr<ID3DBlob> vsBlob, psBlob;
-	if (FAILED(D3DReadFileToBlob(L"NeonObject.VS.cso", &vsBlob)) || FAILED(D3DReadFileToBlob(L"NeonObject.PS.cso", &psBlob))) {
-		MessageBox(nullptr, L"Shader CSO files not found!", L"Error", MB_OK);
-		return;
+	if (FAILED(D3DReadFileToBlob(L"NeonObject.VS.cso", &vsBlob)) || FAILED(D3DReadFileToBlob(L"NeonPlayer.PS.cso", &psBlob))) {
+		assert(false);
 	}
 
 	// --- 5. パイプラインステート(PSO)作成 ---
@@ -105,16 +105,13 @@ void NeonSign::Initialize() {
 	psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 	psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
-	// ★重要：深度バッファの設定
-	// Bloom::PreDraw で nullptr を渡していても、エンジン側で何かが設定されている場合、
-	// ここで正しい形式（D24_S8）を指定しないとエラーになることがあります。
-	psoDesc.DepthStencilState.DepthEnable = FALSE;     // 計算はしないが、
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // 形式はエンジンに合わせる
 
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
 
-	// ★Bloomのテクスチャ形式。R16G16B16A16 で作っていればこれでOKです。
+	// Bloomのテクスチャ形式
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 	psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
@@ -122,37 +119,127 @@ void NeonSign::Initialize() {
 
 	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState_));
 	if (FAILED(hr)) {
-		// ここで止まったら、出力ウィンドウの「D3D12 ERROR」の文字を探して教えてください！
 		assert(false);
 	}
 }
 
+// 引数に shakeX と shakeY を追加
+void NeonPlayer::Update(float shakeX, float shakeY) {
+	KamataEngine::Input* input = KamataEngine::Input::GetInstance();
 
-void NeonSign::SetTransform(XMFLOAT3 pos, XMFLOAT3 scale, float rotZ) {
-	position_ = pos;
-	scale_ = scale;
-	rotationZ_ = rotZ; // ★Z軸回転を保存
-}
+	// ==========================================
+	// 1. WASDでの移動と滑らかな傾き
+	// ==========================================
+	float speed = 0.1f;
+	float targetRotationZ = 0.0f;
 
+	if (input->PushKey(DIK_W)) {
+		position_.y += speed;
+	}
+	if (input->PushKey(DIK_S)) {
+		position_.y -= speed;
+	}
 
+	if (input->PushKey(DIK_A)) {
+		position_.x -= speed;
+		targetRotationZ = 0.25f;
+	}
+	if (input->PushKey(DIK_D)) {
+		position_.x += speed;
+		targetRotationZ = -0.25f;
+	}
 
-void NeonSign::Update() {
-	XMMATRIX world = XMMatrixScaling(scale_.x, scale_.y, scale_.z) * XMMatrixRotationZ(rotationZ_) * XMMatrixTranslation(position_.x, position_.y, position_.z);
-	XMMATRIX view = XMMatrixLookAtLH(XMVectorSet(0, 0, -10, 1), XMVectorSet(0, 0, 0, 1), XMVectorSet(0, 1, 0, 0));
-	XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
-	mappedTransform_->WVP = XMMatrixTranspose(world * view * proj);
+	rotationZ_ = rotationZ_ + (targetRotationZ - rotationZ_) * 0.15f;
 
-	// ネオンの質感設定
-	mappedColor_->color = {0.0f, 0.8f, 1.0f, 1.0f};
-	mappedColor_->intensity = 8.0f;
-	mappedColor_->radius = 0.03f;
-	mappedColor_->softness = 15.0f;
+	// ==========================================
+	// 2. 完全自作の行列計算（平行投影 ＋ ★画面シェイク）
+	// ==========================================
+	auto Multiply = [](const KamataEngine::Matrix4x4& m1, const KamataEngine::Matrix4x4& m2) {
+		KamataEngine::Matrix4x4 r = {};
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				r.m[i][j] = m1.m[i][0] * m2.m[0][j] + m1.m[i][1] * m2.m[1][j] + m1.m[i][2] * m2.m[2][j] + m1.m[i][3] * m2.m[3][j];
+			}
+		}
+		return r;
+	};
 
-	// ★ GameSceneから SetTubeLength で受け取った最新の長さを代入！
+	auto Transpose = [](const KamataEngine::Matrix4x4& m) {
+		KamataEngine::Matrix4x4 r = {};
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				r.m[i][j] = m.m[j][i];
+			}
+		}
+		return r;
+	};
+
+	KamataEngine::Matrix4x4 world = {};
+	float cosZ = std::cos(rotationZ_);
+	float sinZ = std::sin(rotationZ_);
+	world.m[0][0] = scale_.x * cosZ;
+	world.m[0][1] = scale_.x * sinZ;
+	world.m[0][2] = 0.0f;
+	world.m[0][3] = 0.0f;
+	world.m[1][0] = scale_.y * -sinZ;
+	world.m[1][1] = scale_.y * cosZ;
+	world.m[1][2] = 0.0f;
+	world.m[1][3] = 0.0f;
+	world.m[2][0] = 0.0f;
+	world.m[2][1] = 0.0f;
+	world.m[2][2] = scale_.z;
+	world.m[2][3] = 0.0f;
+	world.m[3][0] = position_.x;
+	world.m[3][1] = position_.y;
+	world.m[3][2] = position_.z;
+	world.m[3][3] = 1.0f;
+
+	KamataEngine::Matrix4x4 view = {};
+	view.m[0][0] = 1.0f;
+	view.m[1][1] = 1.0f;
+	view.m[2][2] = 1.0f;
+	view.m[3][3] = 1.0f;
+	view.m[3][2] = 10.0f;
+
+	// ✨ ここで自機のカメラも揺らす！
+	view.m[3][0] += shakeX;
+	view.m[3][1] += shakeY;
+
+	KamataEngine::Matrix4x4 proj = {};
+	float viewWidth = 16.0f;
+	float viewHeight = 9.0f;
+	float nearZ = 0.1f;
+	float farZ = 1000.0f;
+
+	proj.m[0][0] = 2.0f / viewWidth;
+	proj.m[1][1] = 2.0f / viewHeight;
+	proj.m[2][2] = 1.0f / (farZ - nearZ);
+	proj.m[3][2] = nearZ / (nearZ - farZ);
+	proj.m[3][3] = 1.0f;
+
+	KamataEngine::Matrix4x4 wvp = Multiply(world, Multiply(view, proj));
+	mappedTransform_->WVP = Transpose(wvp);
+
+	// ==========================================
+	// 3. ImGuiのカラーデータをGPUへ転送
+	// ==========================================
+	mappedColor_->color = {playerColor_[0], playerColor_[1], playerColor_[2], 1.0f};
+	mappedColor_->intensity = playerIntensity_;
+	mappedColor_->radius = playerRadius_;
+	mappedColor_->softness = 20.0f;
 	mappedColor_->length = tubeLength_;
 }
 
-void NeonSign::Draw() {
+void NeonPlayer::DrawImGui() {
+	if (ImGui::TreeNode("Neon Player Settings")) {
+		ImGui::ColorEdit3("Color", playerColor_);
+		ImGui::SliderFloat("Intensity", &playerIntensity_, 0.0f, 30.0f);
+		ImGui::SliderFloat("Radius", &playerRadius_, 0.001f, 0.1f);
+		ImGui::TreePop();
+	}
+}
+
+void NeonPlayer::Draw() {
 	ID3D12GraphicsCommandList* cmdList = KamataEngine::DirectXCommon::GetInstance()->GetCommandList();
 	cmdList->SetPipelineState(pipelineState_.Get());
 	cmdList->SetGraphicsRootSignature(rootSignature_.Get());

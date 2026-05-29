@@ -1,4 +1,4 @@
-// Bloom.hlsl
+// Bloom.hlsl (バグ2実装版)
 
 // SRV 
 Texture2D<float4> g_InputTex : register(t0);
@@ -56,15 +56,15 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    // 集めた光を重みの合計で割って平均化する
+    // 集めた光を合計で割って平均化する
     bloomColor /= totalWeight;
 
-    // ネオンっぽさを強調するために、ぼかした光の強さを少し倍増させる
+    // ぼかした光の強さを少し倍増させる
     bloomColor *= 1.5f;
 
-    // ==========================================
-    // 最終合成
-    // ==========================================
-    // 元の画像に、ぼかして溢れ出した光を足し合わせる！
-    g_OutputTex[pos] = baseColor + bloomColor;
+
+    //g_OutputTex[pos] = baseColor + bloomColor;
+    
+    float4 finalColor = baseColor + bloomColor;
+    g_OutputTex[pos] = float4(finalColor.rgb, 1.0f);
 }

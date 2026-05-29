@@ -1,5 +1,6 @@
-#include "NeonSign.h"
+#include "NeonBullet.h"
 #include <cassert>
+#include <cmath>
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3d12.lib")
@@ -7,9 +8,8 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 using namespace Microsoft::WRL;
-using namespace DirectX;
 
-void NeonSign::Initialize() {
+void NeonBullet::Initialize() {
 	ID3D12Device* device = KamataEngine::DirectXCommon::GetInstance()->GetDevice();
 	HRESULT hr;
 
@@ -74,9 +74,9 @@ void NeonSign::Initialize() {
 
 	// --- 4. シェーダー読み込み ---
 	ComPtr<ID3DBlob> vsBlob, psBlob;
-	if (FAILED(D3DReadFileToBlob(L"NeonObject.VS.cso", &vsBlob)) || FAILED(D3DReadFileToBlob(L"NeonObject.PS.cso", &psBlob))) {
-		MessageBox(nullptr, L"Shader CSO files not found!", L"Error", MB_OK);
-		return;
+	// ※ 弾の見た目はとりあえず自機と同じシェーダーを使います
+	if (FAILED(D3DReadFileToBlob(L"NeonObject.VS.cso", &vsBlob)) || FAILED(D3DReadFileToBlob(L"NeonPlayer.PS.cso", &psBlob))) {
+		assert(false);
 	}
 
 	// --- 5. パイプラインステート(PSO)作成 ---
@@ -92,73 +92,127 @@ void NeonSign::Initialize() {
 	psoDesc.InputLayout = {layout, _countof(layout)};
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // ネオンなので両面
+	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	psoDesc.RasterizerState.DepthClipEnable = TRUE;
 
-	// ブレンド設定 (加算合成)
 	psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	psoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
 	psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE; // 加算
+	psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
 	psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 	psoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
 	psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 	psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
-	// ★重要：深度バッファの設定
-	// Bloom::PreDraw で nullptr を渡していても、エンジン側で何かが設定されている場合、
-	// ここで正しい形式（D24_S8）を指定しないとエラーになることがあります。
-	psoDesc.DepthStencilState.DepthEnable = FALSE;     // 計算はしないが、
-	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // 形式はエンジンに合わせる
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
+	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
-
-	// ★Bloomのテクスチャ形式。R16G16B16A16 で作っていればこれでOKです。
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-
 	psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	psoDesc.SampleDesc.Count = 1;
 
 	hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState_));
 	if (FAILED(hr)) {
-		// ここで止まったら、出力ウィンドウの「D3D12 ERROR」の文字を探して教えてください！
 		assert(false);
 	}
 }
 
+void NeonBullet::Update(float shakeX, float shakeY) {
+	// 1. 上に向かって進み続ける
+	float speed = 0.2f;
+	position_.y += speed;
 
-void NeonSign::SetTransform(XMFLOAT3 pos, XMFLOAT3 scale, float rotZ) {
-	position_ = pos;
-	scale_ = scale;
-	rotationZ_ = rotZ; // ★Z軸回転を保存
+	// 2. 画面外（上端）に出たら消滅フラグを立てる
+	if (position_.y > 10.0f) {
+		isDead_ = true;
+	}
+
+	// ==========================================
+	// 3. 行列計算（完全自作・転置付き）
+	// ==========================================
+	auto Multiply = [](const KamataEngine::Matrix4x4& m1, const KamataEngine::Matrix4x4& m2) {
+		KamataEngine::Matrix4x4 r = {};
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				r.m[i][j] = m1.m[i][0] * m2.m[0][j] + m1.m[i][1] * m2.m[1][j] + m1.m[i][2] * m2.m[2][j] + m1.m[i][3] * m2.m[3][j];
+			}
+		}
+		return r;
+	};
+
+	auto Transpose = [](const KamataEngine::Matrix4x4& m) {
+		KamataEngine::Matrix4x4 r = {};
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				r.m[i][j] = m.m[j][i];
+			}
+		}
+		return r;
+	};
+
+	KamataEngine::Matrix4x4 world = {};
+	world.m[0][0] = scale_.x;
+	world.m[0][1] = 0.0f;
+	world.m[0][2] = 0.0f;
+	world.m[0][3] = 0.0f;
+	world.m[1][0] = 0.0f;
+	world.m[1][1] = scale_.y;
+	world.m[1][2] = 0.0f;
+	world.m[1][3] = 0.0f;
+	world.m[2][0] = 0.0f;
+	world.m[2][1] = 0.0f;
+	world.m[2][2] = scale_.z;
+	world.m[2][3] = 0.0f;
+	world.m[3][0] = position_.x;
+	world.m[3][1] = position_.y;
+	world.m[3][2] = position_.z;
+	world.m[3][3] = 1.0f;
+
+	KamataEngine::Matrix4x4 view = {};
+	view.m[0][0] = 1.0f;
+	view.m[1][1] = 1.0f;
+	view.m[2][2] = 1.0f;
+	view.m[3][3] = 1.0f;
+	view.m[3][2] = 10.0f;
+
+	// ✨ カメラの座標にシェイク（揺れ）を足す
+	view.m[3][0] += shakeX;
+	view.m[3][1] += shakeY;
+
+	KamataEngine::Matrix4x4 proj = {};
+	float viewWidth = 16.0f;
+	float viewHeight = 9.0f;
+	float nearZ = 0.1f;
+	float farZ = 1000.0f;
+
+	proj.m[0][0] = 2.0f / viewWidth;
+	proj.m[1][1] = 2.0f / viewHeight;
+	proj.m[2][2] = 1.0f / (farZ - nearZ);
+	proj.m[3][2] = nearZ / (nearZ - farZ);
+	proj.m[3][3] = 1.0f;
+
+	KamataEngine::Matrix4x4 wvp = Multiply(world, Multiply(view, proj));
+	mappedTransform_->WVP = Transpose(wvp);
+
+	// ==========================================
+	// 4. カラー転送
+	// ==========================================
+	mappedColor_->color = {bulletColor_[0], bulletColor_[1], bulletColor_[2], 1.0f};
+	mappedColor_->intensity = bulletIntensity_;
+	mappedColor_->radius = bulletRadius_;
+	mappedColor_->softness = 10.0f; // 弾のオーラは少し小さめ
+	mappedColor_->length = 1.0f;
 }
 
-
-
-void NeonSign::Update() {
-	XMMATRIX world = XMMatrixScaling(scale_.x, scale_.y, scale_.z) * XMMatrixRotationZ(rotationZ_) * XMMatrixTranslation(position_.x, position_.y, position_.z);
-	XMMATRIX view = XMMatrixLookAtLH(XMVectorSet(0, 0, -10, 1), XMVectorSet(0, 0, 0, 1), XMVectorSet(0, 1, 0, 0));
-	XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
-	mappedTransform_->WVP = XMMatrixTranspose(world * view * proj);
-
-	// ネオンの質感設定
-	mappedColor_->color = {0.0f, 0.8f, 1.0f, 1.0f};
-	mappedColor_->intensity = 8.0f;
-	mappedColor_->radius = 0.03f;
-	mappedColor_->softness = 15.0f;
-
-	// ★ GameSceneから SetTubeLength で受け取った最新の長さを代入！
-	mappedColor_->length = tubeLength_;
-}
-
-void NeonSign::Draw() {
+void NeonBullet::Draw() {
 	ID3D12GraphicsCommandList* cmdList = KamataEngine::DirectXCommon::GetInstance()->GetCommandList();
-	cmdList->SetPipelineState(pipelineState_.Get());
 	cmdList->SetGraphicsRootSignature(rootSignature_.Get());
-	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmdList->SetPipelineState(pipelineState_.Get());
 	cmdList->IASetVertexBuffers(0, 1, &vbView_);
 	cmdList->IASetIndexBuffer(&ibView_);
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	cmdList->SetGraphicsRootConstantBufferView(0, cbTransform_->GetGPUVirtualAddress());
 	cmdList->SetGraphicsRootConstantBufferView(1, cbColor_->GetGPUVirtualAddress());
 	cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);

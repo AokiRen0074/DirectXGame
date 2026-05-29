@@ -15,13 +15,11 @@ struct VSOutput
 
 float4 main(VSOutput input) : SV_TARGET
 {
-    // UVを -1.0 ～ 1.0 に変換
+    // 真ん中から
     float2 p = input.uv * 2.0f - 1.0f;
 
-    p.y *= tubeLength;
-
-    // 板の端っこから少し内側（0.15くらい）で線分を止めて、光の余白を作る
-    float halfLength = max(0.0f, tubeLength - 0.6f);
+    // ネオン管の長さ
+    float halfLength = tubeLength;
     
     // カプセル（線分）からの距離を計算
     float2 d = float2(abs(p.x), max(0.0f, abs(p.y) - halfLength));

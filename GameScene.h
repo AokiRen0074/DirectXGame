@@ -5,6 +5,9 @@
 #include "NeonSign.h"
 #include <vector>
 #include "NeonImage.h"
+#include "NeonPlayer.h"
+#include <list>
+#include "NeonBullet.h"
 
 class GameScene {
 public:
@@ -24,5 +27,12 @@ private:
 	NeonImage* neonImage_ = nullptr;
 	std::vector<NeonSign*> neonSigns_;
 	std::vector<NeonImage*> neonImages_;
+
+	float globalTubeLength_ = 2.0f;
+
+	NeonPlayer* player_ = nullptr;
+
+	std::list<NeonBullet*> bullets_;
+	int shakeTimer_ = 0;
 
 };

@@ -8,6 +8,7 @@ using namespace KamataEngine;
 // デストラクタで全て解放
 GameScene::~GameScene() {
 	delete bloom_;
+	delete player_;
 	// 配列の中身をすべてループで削除
 	for (NeonSign* sign : neonSigns_) {
 		delete sign;
@@ -52,6 +53,7 @@ void GameScene::Initialize() {
 
 
 
+
 	/*
 	// 左の縦棒
 	NeonSign* leftBar = new NeonSign();
@@ -72,35 +74,119 @@ void GameScene::Initialize() {
 	neonSigns_.push_back(middleBar);
 	*/
 
-	PrintNeon("NEON", -2.0f, 0.0f,0.5f);
+	/*
+	PrintNeon("Thank you for", -6.5f, 2.0f,0.5f);
+	PrintNeon("Listening", -4.0f, -1.5f,0.5f);
+	*/
 	
+	PrintNeon("a", -3.0f, 0.0f, 0.7f);
+
+	player_ = new NeonPlayer();
+	player_->Initialize();
+	player_->SetTransform({0.0f, 0.0f, 0.0f}, {2.0f, 2.0f, 1.0f});
+
 }
 
 void GameScene::Update() {
 
+	KamataEngine::Input* input = KamataEngine::Input::GetInstance();
 
-	// 全てのネオンを更新
-	for (NeonSign* sign : neonSigns_) {
-		sign->Update();
 
+
+	// ==========================================
+	// 1. スペースキーで弾を発射 ＆ シェイク開始
+	// ==========================================
+	if (input->TriggerKey(DIK_SPACE)) {
+		NeonBullet* newBullet = new NeonBullet();
+		newBullet->Initialize();
+
+		// ✨ 弾の発射位置を「自機の現在の位置」にする！
+		KamataEngine::Vector3 spawnPos = player_->GetPosition();
+
+		// 自機に埋もれないように、弾を少し前（上）から出す
+		spawnPos.y += 0.5f;
+
+		// 弾を配置（スケールは小さくする）
+		newBullet->SetTransform(spawnPos, {0.3f, 0.3f, 1.0f});
+
+		bullets_.push_back(newBullet);
+
+		shakeTimer_ = 5;
 	}
+
+	// ==========================================
+	// 2. シェイク（画面揺れ）の計算
+	// ==========================================
+	float shakeX = 0.0f;
+	float shakeY = 0.0f;
+	if (shakeTimer_ > 0) {
+		// 画面をガクガク揺らす乱数計算
+		shakeX = ((rand() % 100) / 50.0f - 1.0f) * 0.1f;
+		shakeY = ((rand() % 100) / 50.0f - 1.0f) * 0.1f;
+		shakeTimer_--;
+	}
+	// ==========================================
+	// 1. ImGuiの表示とパラメータの受付
+	// ==========================================
+#ifdef USE_IMGUI
+
+	ImGui::Begin("Neon Settings");
+
+
+	ImGui::PushID("Neon Text Settings");
+	ImGui::Text("Neon");
+
+	// ★追加：マスター変数を操作するスライダー
+	ImGui::SliderFloat("Tube Length", &globalTubeLength_, 0.0f, 1.0f);
+	player_->DrawImGui();
+	ImGui::Separator();
+	ImGui::PopID();
+
+	ImGui::End();
+
+#endif
+
+	// ==========================================
+	// 2. 全てのネオンオブジェクトの更新
+	// ==========================================
+	for (NeonSign* sign : neonSigns_) {
+		// ★追加：ImGuiで決めたマスターの長さを、それぞれの棒にセットする
+		// ※ NeonSignクラスに SetTubeLength() という関数を作っておく必要があります
+		sign->SetTubeLength(globalTubeLength_);
+
+		sign->Update();
+	}
+
+	player_->Update(shakeX, shakeY);
 
 	for (NeonImage* img : neonImages_) {
 		img->Update();
+	}
+
+	for (auto it = bullets_.begin(); it != bullets_.end();) {
+		(*it)->Update(shakeX, shakeY); // 弾の更新（シェイク値を渡す）
+
+		if ((*it)->IsDead()) {
+			delete *it;              // メモリを解放
+			it = bullets_.erase(it); // リストから抜き取る
+		} else {
+			++it;
+		}
 	}
 }
 
 void GameScene::Draw() {
 
-
-
-for (NeonImage* img : neonImages_) {
+	for (NeonImage* img : neonImages_) {
 		img->Draw();
 	}
 
 	bloom_->PreDraw();
+	player_->Draw();
 
-
+	for (NeonBullet* bullet : bullets_) {
+		bullet->Draw();
+}
 
 
 for (NeonImage* img : neonImages_) {

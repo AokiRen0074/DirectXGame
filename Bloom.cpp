@@ -226,7 +226,7 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 
 	ppPsoDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
 	ppPsoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;  // 光(Bloom結果)の強さはそのまま
-	ppPsoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE; // 下地(黄色いビール)にそのまま足す
+	ppPsoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO; // 下地(黄色いビール)にそのまま足す
 	ppPsoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 	ppPsoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
 	ppPsoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
