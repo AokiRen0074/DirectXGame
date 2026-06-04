@@ -124,8 +124,23 @@ void Player::Update() {
 	};
 
 	float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
-	// 自キャラの角度を設定する
-	worldTransform_.rotation_.y = destinationRotationY;
+
+	float diff = destinationRotationY - worldTransform_.rotation_.y;
+
+
+	const float pi = std::numbers::pi_v<float>;
+	diff = std::fmod(diff, 2.0f * pi);
+	if (diff > pi) {
+		diff -= 2.0f * pi;
+	} else if (diff < -pi) {
+		diff += 2.0f * pi;
+	}
+
+
+	const float kRotationSpeed = 0.15f;
+
+
+	worldTransform_.rotation_.y += diff * kRotationSpeed;
 
 	// 移動
 	worldTransform_.translation_.x += velocity_.x;
