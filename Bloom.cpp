@@ -107,7 +107,6 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 	D3D12_CPU_DESCRIPTOR_HANDLE resultSrvHandle = uavHandle;
 	resultSrvHandle.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	device->CreateShaderResourceView(uavTextureResource_.Get(), &srvDesc, resultSrvHandle);
-
 	// ==========================================
 	// 7. ルートシグネチャの作成 (C++とシェーダーの橋渡し)
 	// ==========================================
@@ -116,30 +115,37 @@ void Bloom::Initialize(int windowWidth, int windowHeight) {
 	// SRV用 (読み込み: t0)
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].NumDescriptors = 1;
-	descriptorRange[0].BaseShaderRegister = 0; // t0に割り当て
+	descriptorRange[0].BaseShaderRegister = 0;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	// UAV用 (書き込み: u0)
 	descriptorRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 	descriptorRange[1].NumDescriptors = 1;
-	descriptorRange[1].BaseShaderRegister = 0; // u0に割り当て
+	descriptorRange[1].BaseShaderRegister = 0;
 	descriptorRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
-	// パラメータ0: SRV
+	// ★ 変更：パラメータを3つにする
+	D3D12_ROOT_PARAMETER rootParameters[3] = {};
+
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = &descriptorRange[0];
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	// パラメータ1: UAV
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
 	rootParameters[1].DescriptorTable.pDescriptorRanges = &descriptorRange[1];
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+	// ✨ 超便利機能「ルート定数」：バッファを作らずに直接intを3つ送る設定
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParameters[2].Constants.ShaderRegister = 0; // b0に送る
+	rootParameters[2].Constants.Num32BitValues = 3; // 3つのデータを送る
+	rootParameters[2].Constants.RegisterSpace = 0;
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{};
-	rootSignatureDesc.NumParameters = 2;
+	rootSignatureDesc.NumParameters = 3; // ★ここも3にする
 	rootSignatureDesc.pParameters = rootParameters;
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
@@ -301,7 +307,13 @@ void Bloom::Execute() {
 	// 4. ルートパラメータにアドレスをセット（t0 = 読み取り, u0 = 書き込み）
 	cmdList->SetComputeRootDescriptorTable(0, srvGpuHandle);
 	cmdList->SetComputeRootDescriptorTable(1, uavGpuHandle);
+	
+	int constants[3] = {enableLuminance_ ? 1 : 0, enableBlur_ ? 1 : 0, enableAdditive_ ? 1 : 0};
+	// 配列ごとGPU（パラメータ2番 = b0レジスタ）に直接発射！
+	cmdList->SetComputeRoot32BitConstants(2, 3, constants, 0);
 
+	// 配列ごとGPU（パラメータ2番 = b0レジスタ）に直接発射！
+	cmdList->SetComputeRoot32BitConstants(2, 3, constants, 0);
 	// 5. コンピュートシェーダーの実行 (Dispatch)
 	// 画面サイズ(1280x720)を、シェーダーで指定したスレッド数(8x8)で割って実行回数を決める
 	UINT dispatchX = (1280 + 7) / 8;
@@ -350,4 +362,13 @@ void Bloom::DrawResult() {
 	barrierToUAV.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	barrierToUAV.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	cmdList->ResourceBarrier(1, &barrierToUAV);
+}
+
+void Bloom::DrawImGui() {
+	if (ImGui::TreeNode("Bloom Debug Settings")) {
+		ImGui::Checkbox("1. Luminance Extraction ", &enableLuminance_);
+		ImGui::Checkbox("2. Gaussian Blur ", &enableBlur_);
+		ImGui::Checkbox("3. Additive Blending", &enableAdditive_);
+		ImGui::TreePop();
+	}
 }

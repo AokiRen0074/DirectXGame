@@ -79,7 +79,7 @@ void GameScene::Initialize() {
 	PrintNeon("Listening", -4.0f, -1.5f,0.5f);
 	*/
 	
-	PrintNeon("a", -3.0f, 0.0f, 0.7f);
+	PrintNeon("NEON", -3.0f, 0.0f, 0.7f);
 
 	player_ = new NeonPlayer();
 	player_->Initialize();
@@ -94,19 +94,18 @@ void GameScene::Update() {
 
 
 	// ==========================================
-	// 1. スペースキーで弾を発射 ＆ シェイク開始
+	// スペースキーで弾を発射
 	// ==========================================
 	if (input->TriggerKey(DIK_SPACE)) {
 		NeonBullet* newBullet = new NeonBullet();
 		newBullet->Initialize();
 
-		// ✨ 弾の発射位置を「自機の現在の位置」にする！
 		KamataEngine::Vector3 spawnPos = player_->GetPosition();
 
-		// 自機に埋もれないように、弾を少し前（上）から出す
+		// 自機に埋もれないように、弾を少し前から出す
 		spawnPos.y += 0.5f;
 
-		// 弾を配置（スケールは小さくする）
+		// 弾を配置
 		newBullet->SetTransform(spawnPos, {0.3f, 0.3f, 1.0f});
 
 		bullets_.push_back(newBullet);
@@ -115,7 +114,7 @@ void GameScene::Update() {
 	}
 
 	// ==========================================
-	// 2. シェイク（画面揺れ）の計算
+	//  シェイク（画面揺れ）の計算
 	// ==========================================
 	float shakeX = 0.0f;
 	float shakeY = 0.0f;
@@ -126,7 +125,7 @@ void GameScene::Update() {
 		shakeTimer_--;
 	}
 	// ==========================================
-	// 1. ImGuiの表示とパラメータの受付
+	// ImGuiの表示とパラメータの受付
 	// ==========================================
 #ifdef USE_IMGUI
 
@@ -136,7 +135,9 @@ void GameScene::Update() {
 	ImGui::PushID("Neon Text Settings");
 	ImGui::Text("Neon");
 
-	// ★追加：マスター変数を操作するスライダー
+bloom_->DrawImGui();
+
+	// マスター変数を操作するスライダー
 	ImGui::SliderFloat("Tube Length", &globalTubeLength_, 0.0f, 1.0f);
 	player_->DrawImGui();
 	ImGui::Separator();
@@ -147,11 +148,10 @@ void GameScene::Update() {
 #endif
 
 	// ==========================================
-	// 2. 全てのネオンオブジェクトの更新
+	// 全てのネオンオブジェクトの更新
 	// ==========================================
 	for (NeonSign* sign : neonSigns_) {
-		// ★追加：ImGuiで決めたマスターの長さを、それぞれの棒にセットする
-		// ※ NeonSignクラスに SetTubeLength() という関数を作っておく必要があります
+	
 		sign->SetTubeLength(globalTubeLength_);
 
 		sign->Update();
@@ -163,8 +163,10 @@ void GameScene::Update() {
 		img->Update();
 	}
 
+
+
 	for (auto it = bullets_.begin(); it != bullets_.end();) {
-		(*it)->Update(shakeX, shakeY); // 弾の更新（シェイク値を渡す）
+		(*it)->Update(shakeX, shakeY); // 弾の更新
 
 		if ((*it)->IsDead()) {
 			delete *it;              // メモリを解放
@@ -199,6 +201,9 @@ for (NeonImage* img : neonImages_) {
 	}
 
 	bloom_->PostDraw();
+
+
+	//cmdList->SetComputeRootConstantBufferView(0, cbBloomSettings_->GetGPUVirtualAddress());
 
 	bloom_->Execute();
 	bloom_->DrawResult();

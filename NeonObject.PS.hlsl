@@ -21,7 +21,7 @@ float4 main(VSOutput input) : SV_TARGET
     // ネオン管の長さ
     float halfLength = tubeLength;
     
-    // カプセル（線分）からの距離を計算
+    // カプセルからの距離を計算
     float2 d = float2(abs(p.x), max(0.0f, abs(p.y) - halfLength));
     float dist = length(d);
 

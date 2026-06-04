@@ -20,8 +20,10 @@ public:
 void PrintNeon(const std::string& text, float startX, float startY, float scale);
 	void CreateLetter(char c, float baseX, float baseY, float scale);
 
+
+
 private:
-	Bloom* bloom_ = nullptr; // ★追加
+	Bloom* bloom_ = nullptr; 
 	NeonCube* neonCube_ = nullptr;
 	NeonSign* neonSign_ = nullptr;
 	NeonImage* neonImage_ = nullptr;

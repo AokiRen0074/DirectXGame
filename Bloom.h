@@ -21,7 +21,14 @@ public:
 	// ★追加：計算結果を画面に描画する
 	void DrawResult();
 
+	void DrawImGui();
+
 private:
+
+	bool enableLuminance_ = true;
+	bool enableBlur_ = true;
+	bool enableAdditive_ = true;
+
 	// HDR描画用のテクスチャリソース（1.0以上の色を保存できるキャンバス）
 	Microsoft::WRL::ComPtr<ID3D12Resource> hdrTextureResource_;
 
