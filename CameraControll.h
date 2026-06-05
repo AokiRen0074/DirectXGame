@@ -6,6 +6,11 @@ class Player;
 class CameraController {
 public:
 
+	enum class Mode {
+		kFollow,
+		kForcedScroll,
+	};
+
 		struct Rect {
 		float left = 0.0f;
 		float right = 1.0f;
@@ -14,6 +19,11 @@ public:
 	};
 
 	Rect movableArea_ = {0, 100, 0, 100};
+
+	// モードのセッター
+	void SetMode(Mode mode) { mode_ = mode; }
+	// モードのゲッター
+	Mode GetMode() const { return mode_; }
 
 	void Initialize();
 
@@ -29,6 +39,7 @@ public:
 
 private:
 	KamataEngine::Camera camera_;
+	Mode mode_ = Mode::kFollow;
 
 public:
 	Player* target_ = nullptr;

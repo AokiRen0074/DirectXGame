@@ -14,25 +14,49 @@ static KamataEngine::Vector3 Lerp(const KamataEngine::Vector3& start, const Kama
 void CameraController::Initialize() { camera_.Initialize(); }
 
 void CameraController::Update() {
-	const WorldTransform& targetWorldTransform = target_->GetWorldTransform();
 
-	const Vector3& targetVelocity = target_->GetVelocity();
 
-	targetPos_.x = targetWorldTransform.translation_.x + targetOffset_.x + (targetVelocity.x * kVelocityBias);
-	targetPos_.y = targetWorldTransform.translation_.y + targetOffset_.y + (targetVelocity.y * kVelocityBias);
-	targetPos_.z = targetWorldTransform.translation_.z + targetOffset_.z + (targetVelocity.z * kVelocityBias);
+	if (target_->isDead_) {
+	
+	camera_.UpdateMatrix();
+		return;
+	}
 
-	camera_.translation_ = Lerp(camera_.translation_, targetPos_, kInterpolationRate);
 
-	camera_.translation_.x = std::clamp(camera_.translation_.x, targetWorldTransform.translation_.x + margin_.left, targetWorldTransform.translation_.x + margin_.right);
-	camera_.translation_.y = std::clamp(camera_.translation_.y, targetWorldTransform.translation_.y + margin_.bottom, targetWorldTransform.translation_.y + margin_.top);
+	// モードごとの移動処理
+	if (mode_ == Mode::kFollow) {
 
-	// ステージの移動範囲制限
+		const WorldTransform& targetWorldTransform = target_->GetWorldTransform();
+		const Vector3& targetVelocity = target_->GetVelocity();
+
+		targetPos_.x = targetWorldTransform.translation_.x + targetOffset_.x + (targetVelocity.x * kVelocityBias);
+		targetPos_.y = targetWorldTransform.translation_.y + targetOffset_.y + (targetVelocity.y * kVelocityBias);
+		targetPos_.z = targetWorldTransform.translation_.z + targetOffset_.z + (targetVelocity.z * kVelocityBias);
+
+		camera_.translation_ = Lerp(camera_.translation_, targetPos_, kInterpolationRate);
+
+		// マージン制限
+		camera_.translation_.x = std::clamp(camera_.translation_.x, targetWorldTransform.translation_.x + margin_.left, targetWorldTransform.translation_.x + margin_.right);
+		camera_.translation_.y = std::clamp(camera_.translation_.y, targetWorldTransform.translation_.y + margin_.bottom, targetWorldTransform.translation_.y + margin_.top);
+
+	} else if (mode_ == Mode::kForcedScroll) {
+
+		camera_.translation_.x += 0.05f; 
+
+
+		const WorldTransform& targetWorldTransform = target_->GetWorldTransform();
+		camera_.translation_.y = targetWorldTransform.translation_.y + targetOffset_.y;
+	}
+
 	camera_.translation_.x = std::clamp(camera_.translation_.x, movableArea_.left, movableArea_.right);
 	camera_.translation_.y = std::clamp(camera_.translation_.y, movableArea_.bottom, movableArea_.top);
 
 	// 行列を更新する
 	camera_.UpdateMatrix();
+
+
+
+
 }
 
 void CameraController::Reset() {

@@ -385,6 +385,44 @@ void Player::Update() {
 	worldTransform_.translation_.y += velocity_.y;
 	worldTransform_.translation_.z += velocity_.z;
 
+
+	const float kScreenHalfWidth = 10.0f;
+	float screenLeftEdge = camera_->translation_.x - kScreenHalfWidth;
+	float screenRightEdge = camera_->translation_.x + kScreenHalfWidth;
+
+	bool isPushedByScreen = false;
+
+
+	if (worldTransform_.translation_.x - (kWidth / 2.0f) < screenLeftEdge) {
+	
+		worldTransform_.translation_.x = screenLeftEdge + (kWidth / 2.0f);
+		isPushedByScreen = true; 
+	}
+
+	else if (worldTransform_.translation_.x + (kWidth / 2.0f) > screenRightEdge) {
+		worldTransform_.translation_.x = screenRightEdge - (kWidth / 2.0f);
+	}
+
+
+if (isPushedByScreen) {
+		
+		Vector3 rightTop = CornerPosition(worldTransform_.translation_, kRightTop);
+		Vector3 rightBottom = CornerPosition(worldTransform_.translation_, kRightBottom);
+
+		MapChipField::IndexSet indexRT = mapChipField_->GetMapChipIndexSetByPosition(rightTop);
+		MapChipField::IndexSet indexRB = mapChipField_->GetMapChipIndexSetByPosition(rightBottom);
+
+		MapChipType typeRT = mapChipField_->GetMapChipTypeByIndex(indexRT.xIndex, indexRT.yIndex);
+		MapChipType typeRB = mapChipField_->GetMapChipTypeByIndex(indexRB.xIndex, indexRB.yIndex);
+
+		// 右上か右下のどちらかがブロックに触れていたらアウト！
+		if (typeRT == MapChipType::kBlock || typeRB == MapChipType::kBlock) {
+			isDead_ = true;
+		}
+	}
+
+
+
 	// 行列の計算
 	UpdateWorldTransform(worldTransform_);
 }

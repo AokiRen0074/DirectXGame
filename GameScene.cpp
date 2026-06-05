@@ -114,7 +114,7 @@ void GameScene::Initialize() {
 	cameraController_->Initialize();
 	cameraController_->SetTarget(player_);
 
-	CameraController::Rect cameraArea = {10.2f, 100.0f, 6.0f, 100.0f}; 
+	CameraController::Rect cameraArea = {10.2f, 82.0f, 6.0f, 100.0f}; 
 	cameraController_->SetMovableArea(cameraArea);
 
 	cameraController_->Reset();
@@ -124,7 +124,7 @@ void GameScene::Initialize() {
 	--------------------------------*/
 	phase_ = Phase::kPlay;
 
-
+	cameraController_->SetMode(CameraController::Mode::kForcedScroll);
 
 	// 5-0
 
@@ -286,10 +286,12 @@ void GameScene::UpdateGamePlayPhase() {
 
 #endif
 	if (isDebugCameraActive_) {
+		camera_.translation_ = debugCamera_->GetCamera().translation_;
 		camera_.matView = debugCamera_->GetCamera().matView;
 		camera_.matProjection = debugCamera_->GetCamera().matProjection;
 		camera_.TransferMatrix();
 	} else {
+		camera_.translation_ = cameraController_->GetCamera().translation_;
 		camera_.matView = cameraController_->GetCamera().matView;
 		camera_.matProjection = cameraController_->GetCamera().matProjection;
 		camera_.TransferMatrix();
