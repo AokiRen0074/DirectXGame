@@ -297,7 +297,7 @@ void Player::SwitchOnGround(const CollisionMapInfo& info) {
 			onGround_ = false;
 		} else {
 
-			// 落下判定（足元に床があるかチェック！）
+			// 落下判定
 
 			Vector3 currentPos = worldTransform_.translation_;
 
