@@ -13,7 +13,7 @@ public:
 	//派生クラスで必ず実装させる関数たち
 	virtual void Update() = 0;
 	virtual void Draw() = 0;
-	virtual void OnCollision(const Player* player) = 0;
+	virtual void OnCollision( Player* player) = 0;
 	virtual bool IsDead() const = 0;
 	virtual bool IsCollisionDisabled() const = 0;
 	virtual AABB GetAABB() = 0;

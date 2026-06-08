@@ -18,7 +18,7 @@ public:
 	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
 	void Update() override;
 	void Draw() override;
-	void OnCollision(const Player* player) override;
+	void OnCollision( Player* player) override;
 	bool IsDead() const override { return isDead_; }
 	bool IsCollisionDisabled() const override { return isCollisionDisabled_; }
 	AABB GetAABB() override;

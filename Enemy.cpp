@@ -69,7 +69,7 @@ AABB Enemy::GetAABB() {
 /*---------------------
 衝突応答
 -------------------------*/
-void Enemy::OnCollision(const Player* player) { 
+void Enemy::OnCollision( Player* player) { 
 
 	if (behavior_ == Behavior::kDeath) {
 		// デス演出中なら何もしない

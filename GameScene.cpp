@@ -59,10 +59,6 @@ GameScene::~GameScene() {
 	guardEffects_.clear();
 	delete modelGuardEffect_;
 
-	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
-		delete shieldEnemy;
-	}
-	shieldEnemies_.clear();
 	delete modelShieldEnemy_;
 
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
@@ -414,13 +410,6 @@ for (BaseEnemy* enemy : enemies_) {
 		return false;
 	});
 
-	enemies_.remove_if([](Enemy* enemy) {
-		if (enemy->IsDead()) { 
-			delete enemy;      
-			return true;       
-		}
-		return false;
-	});
 
 	for (GuardEffect* effect : guardEffects_) {
 		effect->Update();

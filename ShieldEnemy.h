@@ -25,7 +25,7 @@ public:
 	void Draw() override;
 
 	// 衝突応答
-	void OnCollision(const Player* player) override;
+	void OnCollision( Player* player) override;
 
 bool IsDead() const override { return isDead_; }
 
