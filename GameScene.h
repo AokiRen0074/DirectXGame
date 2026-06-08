@@ -1,16 +1,16 @@
 #pragma once
-#include "KamataEngine.h"
-#include "Player.h"
-#include <vector>
-#include "Skydome.h"
-#include <memory>
-#include "MapChipField.h"
 #include "CameraControll.h"
-#include <list>
 #include "Fade.h"
+#include "KamataEngine.h"
+#include "MapChipField.h"
+#include "Player.h"
+#include "Skydome.h"
+#include <list>
+#include <memory>
+#include <vector>
 
 #include "BaseEnemy.h"
-
+#include "BaseEffect.h"
 
 class Enemy;
 class DeathParticles;
@@ -22,12 +22,12 @@ class StageManager;
 // ゲームシーン
 class GameScene {
 public:
-;
+	;
 
 	enum class Phase {
-		kFadeIn, 
-		kPlay,    
-		kDeath, 
+		kFadeIn,
+		kPlay,
+		kDeath,
 		kFadeOut,
 	};
 
@@ -40,16 +40,13 @@ public:
 	MapChipField* mapChipField_;
 	CameraController* cameraController_ = nullptr;
 	// デスパーティクル
-	KamataEngine::Model* modelDeathParticle_ = nullptr; 
+	KamataEngine::Model* modelDeathParticle_ = nullptr;
 	DeathParticles* deathParticles_ = nullptr;
 
-	GameScene() = default; 
+	GameScene() = default;
 	~GameScene();
 
-	
-
-Phase phase_ = Phase::kFadeIn;
-
+	Phase phase_ = Phase::kFadeIn;
 
 	// 終了フラグのゲッター
 	bool IsFinished() const { return finished_; }
@@ -57,7 +54,7 @@ Phase phase_ = Phase::kFadeIn;
 private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;
-	
+
 	// 3dモデル
 	KamataEngine::Model* model_ = nullptr;
 
@@ -66,12 +63,9 @@ private:
 
 	// ヒットエフェクトモデル
 	KamataEngine::Model* modelHitEffect_ = nullptr;
-
-	std::list<HitEffect*> hitEffects_;
-
 	KamataEngine::Model* modelGuardEffect_ = nullptr;
 
-	std::list<GuardEffect*> guardEffects_;
+	std::list<BaseEffect*> effects_;
 
 	// 普通の敵
 	KamataEngine::Model* modelEnemy_ = nullptr;
@@ -100,17 +94,16 @@ private:
 	// ほっとリロード要求
 	bool reloadRequested_ = false;
 
-	public:
+public:
 	// 初期化
-	    void Initialize(StageManager* stageDataManager);
+	void Initialize(StageManager* stageDataManager);
 	// 更新
 	void Update();
 
 	// 描画
 	void Draw();
 
-
-void GenerateFieldObjects();
+	void GenerateFieldObjects();
 
 	// 全ての当たり判定を行う
 	void CheckAllCollisions();
@@ -123,7 +116,6 @@ void GenerateFieldObjects();
 	void ChangePhase();
 
 	void CreateGuardEffect(const KamataEngine::Vector3& position);
-	
-	
+
 	bool IsReloadRequested() const { return reloadRequested_; }
 };

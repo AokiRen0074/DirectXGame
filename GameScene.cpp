@@ -53,10 +53,11 @@ GameScene::~GameScene() {
 	delete modelPlayer_;
 	delete modelPlayerAttack_;
 
-	for (GuardEffect* effect : guardEffects_) {
+for (BaseEffect* effect : effects_) {
 		delete effect;
 	}
-	guardEffects_.clear();
+	effects_.clear();
+
 	delete modelGuardEffect_;
 
 	delete modelShieldEnemy_;
@@ -312,7 +313,7 @@ void GameScene::ChangePhase() {
 -----------------------------------*/
 void GameScene::CreateHitEffect(const KamataEngine::Vector3& position) {
 	HitEffect* newHitEffect = HitEffect::Create(position);
-	hitEffects_.push_back(newHitEffect);
+	effects_.push_back(newHitEffect);
 }
 
 /*----------------------------
@@ -398,24 +399,11 @@ for (BaseEnemy* enemy : enemies_) {
 	});
 
 	// ヒットエフェクトの更新
-	for (HitEffect* effect : hitEffects_) {
+	for (BaseEffect* effect : effects_) {
 		effect->Update();
 	}
 
-	hitEffects_.remove_if([](HitEffect* effect) {
-		if (effect->IsDead()) {
-			delete effect;
-			return true;
-		}
-		return false;
-	});
-
-
-	for (GuardEffect* effect : guardEffects_) {
-		effect->Update();
-	}
-
-	guardEffects_.remove_if([](GuardEffect* effect) {
+	effects_.remove_if([](BaseEffect* effect) {
 		if (effect->IsDead()) {
 			delete effect;
 			return true;
@@ -507,7 +495,7 @@ void GameScene::UpdateDeathPhase() {
 
 void GameScene::CreateGuardEffect(const KamataEngine::Vector3& position) {
 	GuardEffect* newEffect = GuardEffect::Create(position);
-	guardEffects_.push_back(newEffect);
+	effects_.push_back(newEffect);
 }
 
 // 描画
@@ -529,11 +517,7 @@ void GameScene::Draw() {
 		deathParticles_->Draw();
 	}
 
-	for (HitEffect* effect : hitEffects_) {
-		effect->Draw();
-	}
-
-	for (GuardEffect* effect : guardEffects_) {
+for (BaseEffect* effect : effects_) {
 		effect->Draw();
 	}
 

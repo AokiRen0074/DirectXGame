@@ -1,8 +1,9 @@
 #pragma once
 #include "KamataEngine.h"
 #include <array>
+#include "BaseEffect.h"
 
-class HitEffect {
+class HitEffect final : public BaseEffect{
 public:
 
 enum class Phase {
@@ -16,10 +17,10 @@ enum class Phase {
 	static void SetCamera(KamataEngine::Camera* camera) { camera_ = camera; }
 
 	void Initialize(const KamataEngine::Vector3& position);
-	void Update();
-	void Draw();
+	void Update()override;
+	void Draw()override;
 
-	bool IsDead() const { return phase_ == Phase::kDead; }
+	bool IsDead() const override{ return phase_ == Phase::kDead; }
 
 private:
 	static KamataEngine::Model* model_;
