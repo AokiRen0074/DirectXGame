@@ -8,6 +8,7 @@
 #include "ShieldEnemy.h"
 #include "GuardEffect.h"
 #include "StageManager.h"
+#include "GlobalVariables.h"
 #ifdef USE_IMGUI
 #include <imgui.h>
 #endif
@@ -382,6 +383,9 @@ void GameScene::Update() {
 
 	case Phase::kPlay:
 		UpdateGamePlayPhase();
+		if (KamataEngine::Input::GetInstance()->TriggerKey(DIK_L)) {
+			GlobalVariables::GetInstance()->SaveFile("Player");
+		}
 		break;
 
 	case Phase::kDeath:

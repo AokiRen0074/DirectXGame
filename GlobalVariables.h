@@ -2,6 +2,7 @@
 #include <variant>
 #include <KamataEngine.h>
 #include<map>
+#include<json.hpp>
 
 class GlobalVariables {
 public:
@@ -20,6 +21,9 @@ public:
 
 	// 毎フレーム更新処理
 	void Update();
+
+	// ファイルに書き出し
+	void SaveFile(const std::string& groupName);
 
 	private:
 
@@ -49,8 +53,10 @@ public:
 		// 全データ
 	    std::map<std::string, Group> datas_;
 
+		using json = nlohmann::json;
 
-
+		// グローバル変数の保存先ファイルパス 
+		const std::string kDirectoryPath = "Resources/GlobalVariables/";
 
 
 };
