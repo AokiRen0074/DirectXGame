@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <numbers>
+#include "GlobalVariables.h"
 
 using namespace KamataEngine;
 
@@ -47,6 +48,16 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAt
 
 	modelAttack_ = modelAttack;
 	worldTransformAttack_.Initialize();
+
+	// デバッガによる確認
+	GlobalVariables* globalVariables = GlobalVariables::GetInstance();
+	const char* groupName = "Player";
+
+	// グループを追加
+	GlobalVariables::GetInstance()->CreateGroup(groupName);
+
+	globalVariables->SetValue(groupName, "Test", 90);
+
 }
 
 /*-------------------------------------

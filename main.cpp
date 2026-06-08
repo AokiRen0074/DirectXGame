@@ -6,7 +6,7 @@
 #include "StageManager.h"
 #include <fstream> 
 #include <sstream>
-
+#include "GlobalVariables.h"
 
 
 using namespace KamataEngine;
@@ -157,6 +157,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		ChangeScene();
 		UpdateScene();
+
+		GlobalVariables::GetInstance()->Update();
 
 		// 描画処理
 		dxCommon->PreDraw();
