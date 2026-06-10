@@ -25,6 +25,27 @@ public:
 	// ファイルに書き出し
 	void SaveFile(const std::string& groupName);
 
+	// ディレクトリの全ファイル読み込み
+	void LoadFiles();
+
+	// ファイルから読み込む
+	void LoadFile(const std::string& groupName);
+
+	// 項目の追加(int)
+	void AddItem(const std::string& groupName, const std::string& key, int32_t value);
+
+	// 項目の追加(float
+	void AddItem(const std::string& groupName, const std::string& key, float value);
+
+	// 項目の追加(Vector3)
+	void AddItem(const std::string& groupName, const std::string& key, const KamataEngine::Vector3& value);
+
+	// 値の取得(ゲッター)
+	int32_t GetIntValue(const std::string& groupName, const std::string& key) const;
+	float GetFloatValue(const std::string& groupName, const std::string& key) const;
+	KamataEngine::Vector3 GetVector3Value(const std::string& groupName, const std::string& key) const;
+
+
 	private:
 
 		// コンストラクタ

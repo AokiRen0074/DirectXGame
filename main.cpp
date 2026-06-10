@@ -121,6 +121,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	KamataEngine::Initialize(L"LC1B_01_アオキ_レン_AL2");
 
+	// グローバル変数の読み込み
+	GlobalVariables::GetInstance()->LoadFiles();
+
 	scene = Scene::kTitle;
 	titleScene = new TitleScene;
 	titleScene->Initialize();

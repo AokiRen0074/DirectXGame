@@ -56,7 +56,9 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAt
 	// グループを追加
 	GlobalVariables::GetInstance()->CreateGroup(groupName);
 
-	globalVariables->SetValue(groupName, "Test", 90);
+	globalVariables->AddItem(groupName, "Test", 90);
+
+
 
 }
 

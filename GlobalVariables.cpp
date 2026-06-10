@@ -110,11 +110,8 @@ void GlobalVariables::Update() {
 			MessageBoxA(nullptr, message.c_str(), "GroubalVariavles", 0);
 		}
 
-
 		ImGui::EndMenu();
 	}
-
-	
 
 	ImGui::EndMenuBar();
 	ImGui::End();
@@ -188,4 +185,155 @@ void GlobalVariables::SaveFile(const std::string& groupName) {
 
 	// ファイルを閉じる
 	ofs.close();
+}
+
+void GlobalVariables::LoadFile(const std::string& groupName) {
+	// 読み込むJSONファイルのフルパスを合成する
+	std::string filePath = kDirectoryPath + groupName + ".json";
+	// 読み込み用ファイルストリーム
+	std::ifstream ifs;
+	// 　ファイル読み込みように開く
+	ifs.open(filePath);
+
+	// ファイルオープン失敗?
+	if (ifs.fail()) {
+		std::string message = "Failed open data file for read. " + filePath;
+		MessageBoxA(nullptr, message.c_str(), "GlobalVariables", 0);
+		assert(0);
+		return;
+	}
+
+	json root;
+
+	// json文字列からjsonデータ構造に天界
+	ifs >> root;
+	// ファイルを閉じる
+	ifs.close();
+
+	// 　グループを検索
+	json::iterator itGroup = root.find(groupName);
+
+	// 未登録チェック
+	assert(itGroup != root.end());
+
+	// 各アイテムについて
+	for (json::iterator itItem = itGroup->begin(); itItem != itGroup->end(); ++itItem) {
+
+		// アイテム名を取得
+		const std::string& itemName = itItem.key();
+
+		// int32_t型の値を保持していれば
+		if (itItem->is_number_integer()) {
+			// int型の値を登録
+			int32_t value = itItem->get<int32_t>();
+			SetValue(groupName, itemName, value);
+		} else if (itItem->is_number_float()) {
+			// float 型の値を登録
+			double value = itItem->get<double>();
+			SetValue(groupName, itemName, static_cast<float>(value));
+		} else if (itItem->is_array() && itItem->size() == 3) {
+			// float型のjson配列
+			KamataEngine::Vector3 value = {itItem->at(0), itItem->at(1), itItem->at(2)};
+			SetValue(groupName, itemName, value);
+		}
+	}
+}
+
+void GlobalVariables::LoadFiles() {
+	// 保存先ディレクトリのパスをローカル変数で宣言
+	std::filesystem::path dir(kDirectoryPath);
+
+	// ディレクトリがなければスキップする
+	if (!std::filesystem::exists(dir)) {
+		return;
+	}
+
+	std::filesystem::directory_iterator dir_it(dir);
+	for (const std::filesystem::directory_entry& entry : dir_it) {
+		// ファイルパスを取得
+		const std::filesystem::path& filePath = entry.path();
+
+		// ファイル拡張子を取得
+		std::string extension = filePath.extension().string();
+		// .jsonファイル以外はスキップ
+		if (extension.compare(".json") != 0) {
+			continue;
+		}
+
+		// ファイル読み込み
+		LoadFile(filePath.stem().string());
+	}
+}
+
+
+
+// 項目の追加(int)
+void GlobalVariables::AddItem(const std::string& groupName, const std::string& key, int32_t value) {
+	Group& group = datas_[groupName];
+
+	// 項目が未登録なら
+	if (group.items.find(key) == group.items.end()) {
+		// SetValueを呼び出して値をセットする
+		SetValue(groupName, key, value);
+	}
+}
+
+// 項目の追加(float)
+void GlobalVariables::AddItem(const std::string& groupName, const std::string& key, float value) {
+	Group& group = datas_[groupName];
+
+	// 項目が未登録なら
+	if (group.items.find(key) == group.items.end()) {
+		SetValue(groupName, key, value);
+	}
+}
+
+// 項目の追加(Vector3)
+void GlobalVariables::AddItem(const std::string& groupName, const std::string& key, const KamataEngine::Vector3& value) {
+	Group& group = datas_[groupName];
+
+	// 項目が未登録なら
+	if (group.items.find(key) == group.items.end()) {
+		SetValue(groupName, key, value);
+	}
+}
+
+
+
+// int型の値を取得
+int32_t GlobalVariables::GetIntValue(const std::string& groupName, const std::string& key) const {
+	assert(datas_.find(groupName) != datas_.end());
+	// グループの参照を取得
+	const Group& group = datas_.at(groupName);
+
+	assert(group.items.find(key) != group.items.end());
+
+	return std::get<int32_t>(group.items.at(key).value);
+}
+
+// float型の値を取得
+float GlobalVariables::GetFloatValue(const std::string& groupName, const std::string& key) const {
+
+	assert(datas_.find(groupName) != datas_.end());
+	// グループの参照を取得
+	const Group& group = datas_.at(groupName);
+
+
+	assert(group.items.find(key) != group.items.end());
+
+
+	return std::get<float>(group.items.at(key).value);
+}
+
+// Vector3型の値を取得
+KamataEngine::Vector3 GlobalVariables::GetVector3Value(const std::string& groupName, const std::string& key) const {
+
+	assert(datas_.find(groupName) != datas_.end());
+	// グループの参照を取得
+	const Group& group = datas_.at(groupName);
+
+
+	assert(group.items.find(key) != group.items.end());
+
+	return std::get<KamataEngine::Vector3>(group.items.at(key).value);
 }
