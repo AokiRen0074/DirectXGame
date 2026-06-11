@@ -12,6 +12,10 @@ static float EaseOut(float start, float end, float t) {
 	return start + (end - start) * easeT;
 }
 
+void GuardEffect::RegisterGlobalVariables() {}
+
+void GuardEffect::ApplyGlobalVariables() {}
+
 
 GuardEffect* GuardEffect::Create(const KamataEngine::Vector3& position) {
 	GuardEffect* instance = new GuardEffect();

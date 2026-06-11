@@ -44,7 +44,7 @@ public:
 	GameScene() = default; 
 	~GameScene();
 
-	
+
 
 Phase phase_ = Phase::kFadeIn;
 

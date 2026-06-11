@@ -60,16 +60,11 @@ public:
 		//　コピー代入演算子
 	    GlobalVariables& operator=(const GlobalVariables&) = delete;
 
-		struct Item {
-			// 項目の値
-		    std::variant < int32_t, float, KamataEngine::Vector3 > value;
-		};
+		// 項目の値
+		using Item= std::variant < int32_t, float, KamataEngine::Vector3 >;
 
-		// グループ
-		struct Group {
-		    std::map<std::string, Item> items;
-		    std::map<std::string, Item> key;
-		};
+		
+	using Group = std::map<std::string, Item>;
 
 		// 全データ
 	    std::map<std::string, Group> datas_;

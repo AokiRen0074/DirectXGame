@@ -1,23 +1,21 @@
 #pragma once
-#include "KamataEngine.h"
 #include "AABB.h"
+#include "KamataEngine.h"
 
 class MapChipField;
 class Enemy;
 
 class Player {
 public:
-
 	enum class LRDirection {
 		kRight,
 		kLeft,
 	};
 
-
 	struct CollisionMapInfo {
-		bool isCeiling = false;        
-		bool isGround = false;           
-		bool isWall = false;             
+		bool isCeiling = false;
+		bool isGround = false;
+		bool isWall = false;
 		KamataEngine::Vector3 moveAmount = {};
 	};
 
@@ -32,20 +30,20 @@ public:
 
 	enum class Behavior {
 		kUnknown,
-		kRoot,   
-		kAttack, 
+		kRoot,
+		kAttack,
 		kKnockback,
 	};
 
 	enum class KnockbackPhase {
-		kBlow,    
-		kRecover, 
+		kBlow,
+		kRecover,
 	};
 
 	enum class AttackPhase {
-		kCharge,   
-		kDash,     
-		kRecovery, 
+		kCharge,
+		kDash,
+		kRecovery,
 	};
 
 	void Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAttack, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
@@ -62,11 +60,15 @@ public:
 
 	void RequestKnockback() { isKnockbackRequest_ = true; }
 
-	//衝突応答
+	// 調整項目を登録
+	static void RegisterGlobalVariables();
+	// 項目調整の適応
+	static void ApplyGlobalVariables();
+
+	// 衝突応答
 	void OnCollision(const Enemy* enemy);
 
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
-	
 
 	// ワールド座標を取得
 	KamataEngine::Vector3 GetWorldPosition();
@@ -75,10 +77,8 @@ public:
 
 	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; };
 
-
 	KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& center, Corner corner);
 
-	
 	LRDirection lrDirection_ = LRDirection::kRight;
 
 	KamataEngine::WorldTransform worldTransform_;
@@ -86,11 +86,11 @@ public:
 	KamataEngine::Camera* camera_ = nullptr;
 
 	KamataEngine::Vector3 velocity_ = {};
-	static inline const float kAcceleration = 0.02f;
+	static inline float kAcceleration = 0.02f;
 	static inline const float kAttenuation = 0.05f;
-	static inline const float kLimitRunSpeed = 0.3f;
+	static inline float kLimitRunSpeed = 0.3f;
 
-	const KamataEngine::Vector3& GetVelocity() const { return velocity_; };
+	const KamataEngine::Vector3& GetVelocity() const { return velocity_; }
 
 	// デスフラグ
 	bool isDead_ = false;
@@ -102,7 +102,7 @@ public:
 	// 最大落下速度
 	static inline const float kLimitFallSpeed = 0.5f;
 	// ジャンプ初速
-	static inline const float kJumpAcceleration = 0.3f;
+	static inline float kJumpAcceleration = 0.3f;
 
 	// キャラクターの当たり判定サイズ
 	static inline const float kWidth = 0.8f;
@@ -154,8 +154,8 @@ private:
 	void BehaviorRootInitialize();
 	// 攻撃行動初期化
 	void BehaviorAttackInitialize();
-	
-	bool isKnockbackRequest_ = false; 
+
+	bool isKnockbackRequest_ = false;
 	KnockbackPhase knockbackPhase_ = KnockbackPhase::kBlow;
 	uint32_t knockbackTimer_ = 0;
 

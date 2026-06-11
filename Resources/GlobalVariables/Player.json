@@ -1,5 +1,7 @@
 {
     "Player": {
+        "PlayerAcceleration": 96.0,
+        "PlayerJumpAcceleration": 4.0,
         "Test": 5
     }
 }

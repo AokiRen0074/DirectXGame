@@ -11,6 +11,14 @@ static KamataEngine::Vector3 Lerp(const KamataEngine::Vector3& start, const Kama
 	return result;
 }
 
+void CameraController::RegisterGlobalVariables() {
+
+}
+
+void CameraController::ApplyGlobalVariables() {
+
+}
+
 void CameraController::Initialize() { camera_.Initialize(); }
 
 void CameraController::Update() {

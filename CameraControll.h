@@ -25,6 +25,10 @@ public:
 
 	void SetMovableArea(Rect area) { movableArea_ = area; }
 
+		// 調整項目を登録
+	static void RegisterGlobalVariables();
+	static void ApplyGlobalVariables();
+
 	const KamataEngine::Camera& GetCamera() const { return camera_; }
 
 private:

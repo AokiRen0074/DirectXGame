@@ -58,6 +58,10 @@ void HitEffect::Initialize(const KamataEngine::Vector3& position) {
 	frameCounter_ = 0;
 }
 
+void HitEffect::RegisterGlobalVariables() {}
+
+void HitEffect::ApplyGlobalVariables() {}
+
 /*-----------------------
 更新
 --------------------------*/

@@ -33,6 +33,10 @@ public:
 	// セッター
 	void SetGameScene(GameScene* gameScene) { gameScene_ = gameScene; }
 
+		// 調整項目を登録
+	static void RegisterGlobalVariables();
+	static void ApplyGlobalVariables();
+
 	// ワールド座標を取得
 	KamataEngine::Vector3 GetWorldPosition();
 

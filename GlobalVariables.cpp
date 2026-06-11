@@ -21,12 +21,7 @@ void GlobalVariables::SetValue(const std::string& groupName, const std::string& 
 	// グループの参照を取得
 	Group& group = datas_[groupName];
 
-	// 新しい項目のデータを設定
-	Item newItem{};
-	newItem.value = value;
-
-	// 設定した項目をstd;;mapに追加
-	group.items[key] = newItem;
+	group[key] = value;
 }
 
 // 項目のセット(float)
@@ -35,21 +30,14 @@ void GlobalVariables::SetValue(const std::string& groupName, const std::string& 
 	// グループの参照を取得
 	Group& group = datas_[groupName];
 	// 新しい項目のデータを設定
-	Item newItem{};
-	newItem.value = value;
-	// 設定した項目をstd;;mapに追加
-	group.items[key] = newItem;
+	group[key] = value;
 }
 
 // 項目のセット(Vetor3)
 void GlobalVariables::SetValue(const std::string& groupName, const std::string& key, const KamataEngine::Vector3 value) {
 	// グループの参照を取得
 	Group& group = datas_[groupName];
-	// 新しい項目のデータを設定
-	Item newItem{};
-	newItem.value = value;
-	// 設定した項目をstd;;mapに追加
-	group.items[key] = newItem;
+	group[key] = value;
 }
 
 // 更新処理
@@ -74,7 +62,7 @@ void GlobalVariables::Update() {
 			continue;
 
 		// 各項目について
-		for (std::map<std::string, Item>::iterator itItem = group.items.begin(); itItem != group.items.end(); ++itItem) {
+		for (std::map<std::string, Item>::iterator itItem = group.begin(); itItem != group.end(); ++itItem) {
 
 			// 項目名を取得
 			const std::string& itemName = itItem->first;
@@ -82,20 +70,20 @@ void GlobalVariables::Update() {
 			// 項目の参照を取得
 			Item& item = itItem->second;
 
-			// int32_t型の値を保持していれば
-			if (std::holds_alternative<int32_t>(item.value)) {
+			// int32_t型の値を保持していれば 
+			if (std::holds_alternative<int32_t>(item)) {
 
-				int32_t* ptr = std::get_if<int32_t>(&item.value);
+				int32_t* ptr = std::get_if<int32_t>(&item);
 				ImGui::SliderInt(itemName.c_str(), ptr, 0, 100);
 
-			} else if (std::holds_alternative<float>(item.value)) {
+			} else if (std::holds_alternative<float>(item)) {
 
-				float* ptr = std::get_if<float>(&item.value);
+				float* ptr = std::get_if<float>(&item);
 				ImGui::SliderFloat3(itemName.c_str(), ptr, 0.0f, 100.0f);
 
-			} else if (std::holds_alternative<KamataEngine::Vector3>(item.value)) {
+			} else if (std::holds_alternative<KamataEngine::Vector3>(item)) {
 
-				KamataEngine::Vector3* ptr = std::get_if<KamataEngine::Vector3>(&item.value);
+				KamataEngine::Vector3* ptr = std::get_if<KamataEngine::Vector3>(&item);
 				ImGui::SliderFloat3(itemName.c_str(), reinterpret_cast<float*>(ptr), -10.0f, 10.0f);
 			}
 		}
@@ -132,26 +120,26 @@ void GlobalVariables::SaveFile(const std::string& groupName) {
 	root[groupName] = json::object();
 
 	// 各項目について
-	for (std::map<std::string, Item>::iterator itItem = itGroup->second.items.begin(); itItem != itGroup->second.items.end(); ++itItem) {
+	for (std::map<std::string, Item>::iterator itItem = itGroup->second.begin(); itItem != itGroup->second.end(); ++itItem) {
 
 		// 項目を取得
 		const std::string& itemName = itItem->first;
 
-		// 　項目の参照を取得
+		// 項目の参照を取得
 		Item& item = itItem->second;
 
 		// int32_t型の値を保持していれば
-		if (std::holds_alternative<int32_t>(item.value)) {
+		if (std::holds_alternative<int32_t>(item)) {
 
 			// int32_t型の値を登録
-			root[groupName][itemName] = std::get<int32_t>(item.value);
-		} else if (std::holds_alternative<float>(item.value)) {
+			root[groupName][itemName] = std::get<int32_t>(item);
+		} else if (std::holds_alternative<float>(item)) {
 			// float型の値を登録
-			root[groupName][itemName] = std::get<float>(item.value);
-		} else if (std::holds_alternative<KamataEngine::Vector3>(item.value)) {
+			root[groupName][itemName] = std::get<float>(item);
+		} else if (std::holds_alternative<KamataEngine::Vector3>(item)) {
 
 			// Vector3型のjson配列
-			KamataEngine::Vector3 value = std::get<KamataEngine::Vector3>(item.value);
+			KamataEngine::Vector3 value = std::get<KamataEngine::Vector3>(item);
 			root[groupName][itemName] = json::array({value.x, value.y, value.z});
 		}
 	}
@@ -272,7 +260,7 @@ void GlobalVariables::AddItem(const std::string& groupName, const std::string& k
 	Group& group = datas_[groupName];
 
 	// 項目が未登録なら
-	if (group.items.find(key) == group.items.end()) {
+	if (group.find(key) == group.end()) {
 		// SetValueを呼び出して値をセットする
 		SetValue(groupName, key, value);
 	}
@@ -283,7 +271,7 @@ void GlobalVariables::AddItem(const std::string& groupName, const std::string& k
 	Group& group = datas_[groupName];
 
 	// 項目が未登録なら
-	if (group.items.find(key) == group.items.end()) {
+	if (group.find(key) == group.end()) {
 		SetValue(groupName, key, value);
 	}
 }
@@ -293,7 +281,7 @@ void GlobalVariables::AddItem(const std::string& groupName, const std::string& k
 	Group& group = datas_[groupName];
 
 	// 項目が未登録なら
-	if (group.items.find(key) == group.items.end()) {
+	if (group.find(key) == group.end()) {
 		SetValue(groupName, key, value);
 	}
 }
@@ -306,9 +294,9 @@ int32_t GlobalVariables::GetIntValue(const std::string& groupName, const std::st
 	// グループの参照を取得
 	const Group& group = datas_.at(groupName);
 
-	assert(group.items.find(key) != group.items.end());
+	assert(group.find(key) != group.end());
 
-	return std::get<int32_t>(group.items.at(key).value);
+	return std::get<int32_t>(group.at(key));
 }
 
 // float型の値を取得
@@ -319,10 +307,10 @@ float GlobalVariables::GetFloatValue(const std::string& groupName, const std::st
 	const Group& group = datas_.at(groupName);
 
 
-	assert(group.items.find(key) != group.items.end());
+	assert(group.find(key) != group.end());
 
 
-	return std::get<float>(group.items.at(key).value);
+	return std::get<float>(group.at(key));
 }
 
 // Vector3型の値を取得
@@ -333,7 +321,7 @@ KamataEngine::Vector3 GlobalVariables::GetVector3Value(const std::string& groupN
 	const Group& group = datas_.at(groupName);
 
 
-	assert(group.items.find(key) != group.items.end());
+	assert(group.find(key) != group.end());
 
-	return std::get<KamataEngine::Vector3>(group.items.at(key).value);
+	return std::get<KamataEngine::Vector3>(group.at(key));
 }

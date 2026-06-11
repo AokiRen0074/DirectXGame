@@ -1,18 +1,18 @@
 #include "GameScene.h"
-#include "Skydome.h"
-#include "WorldTransform.h"
-#include "Enemy.h"
 #include "AABB.h"
 #include "DeathParticles.h"
+#include "Enemy.h"
+#include "GlobalVariables.h"
+#include "GuardEffect.h"
 #include "HitEffect.h"
 #include "ShieldEnemy.h"
-#include "GuardEffect.h"
+#include "Skydome.h"
 #include "StageManager.h"
-#include "GlobalVariables.h"
+#include "WorldTransform.h"
+#include "Player.h"
 #ifdef USE_IMGUI
 #include <imgui.h>
 #endif
-
 
 using namespace KamataEngine;
 
@@ -40,7 +40,7 @@ GameScene::~GameScene() {
 		deathParticles_ = nullptr;
 	}
 	delete modelDeathParticle_;
-	
+
 	enemies_.clear();
 
 	delete model_;
@@ -82,6 +82,16 @@ GameScene::~GameScene() {
 void GameScene::Initialize(StageManager* stageDataManager) {
 	// 引数をメンバ変数に記録する
 	stageManager_ = stageDataManager;
+	/*-----------------
+	調整項目の登録
+	--------------------------*/
+	Player::RegisterGlobalVariables();
+	Enemy::RegisterGlobalVariables();
+	ShieldEnemy ::RegisterGlobalVariables();
+	CameraController::RegisterGlobalVariables();
+	DeathParticles::RegisterGlobalVariables();
+	GuardEffect::RegisterGlobalVariables();
+	HitEffect::RegisterGlobalVariables();
 
 	/*---------------------------
 	マップチップ
@@ -101,7 +111,7 @@ void GameScene::Initialize(StageManager* stageDataManager) {
 	skydome_ = std::make_unique<Skydome>();
 	skydome_->camera_ = &camera_;
 	skydome_->Initialize();
-	modelSkydome_ = Model::CreateFromOBJ("skydome", true); 
+	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
 
 	/*--------------------
 	プレイヤー
@@ -111,7 +121,6 @@ void GameScene::Initialize(StageManager* stageDataManager) {
 	camera_.Initialize();
 	camera_.farZ = 2000.0f;
 	camera_.translation_ = {0.0f, 0.0f, -50.0f};
-	
 
 	/*-----------------------
 	エネミー
@@ -154,11 +163,11 @@ void GameScene::Initialize(StageManager* stageDataManager) {
 	cameraController_->Initialize();
 	cameraController_->SetTarget(player_);
 
-	CameraController::Rect cameraArea = {10.2f, 100.0f, 6.0f, 100.0f}; 
+	CameraController::Rect cameraArea = {10.2f, 100.0f, 6.0f, 100.0f};
 	cameraController_->SetMovableArea(cameraArea);
 
 	cameraController_->Reset();
-	
+
 	/*------------------------
 	ゲームフェーズ
 	--------------------------------*/
@@ -167,8 +176,6 @@ void GameScene::Initialize(StageManager* stageDataManager) {
 	fade_->Start(Fade::Status::FadeIn, 1.0f); // ゲーム開始時に1秒でフェードイン
 	phase_ = Phase::kFadeIn;
 
-
-
 	// 5-0
 
 	model_ = Model::CreateFromOBJ("block", true);
@@ -176,12 +183,7 @@ void GameScene::Initialize(StageManager* stageDataManager) {
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 	debugCamera_->SetFarZ(2000.0f);
-
-
-	
-
 }
-
 
 void GameScene::GenerateFieldObjects() {
 	// 要素数
@@ -229,7 +231,7 @@ void GameScene::GenerateFieldObjects() {
 				KamataEngine::Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(j, i);
 
 				if (subID == 0) {
-					//　サブIDが0普通の敵
+					// 　サブIDが0普通の敵
 					Enemy* newEnemy = new Enemy();
 					newEnemy->Initialize(modelEnemy_, &camera_, enemyPosition);
 					newEnemy->SetGameScene(this);
@@ -243,12 +245,11 @@ void GameScene::GenerateFieldObjects() {
 					shieldEnemies_.push_back(newShieldEnemy);
 				}
 
-
 				worldTransformBlocks_[i][j] = nullptr;
 				break;
 			}
 			default:
-	
+
 				worldTransformBlocks_[i][j] = nullptr;
 				break;
 			}
@@ -281,13 +282,12 @@ void GameScene::CheckAllCollisions() {
 
 			// AABB同士の交差判定
 			if (IsCollision(aabb1, aabb2)) {
-				
+
 				player_->OnCollision(enemy);
 				enemy->OnCollision(player_);
 			}
 		}
 	}
-
 
 	for (ShieldEnemy* shieldEnemy : shieldEnemies_) {
 
@@ -299,7 +299,7 @@ void GameScene::CheckAllCollisions() {
 
 		// AABB同士の交差判定
 		if (IsCollision(aabb1, aabb2)) {
-			player_->OnCollision((Enemy*)shieldEnemy); 
+			player_->OnCollision((Enemy*)shieldEnemy);
 			shieldEnemy->OnCollision(player_);
 		}
 	}
@@ -326,10 +326,8 @@ void GameScene::ChangePhase() {
 			// 死亡演出フェーズに切り替え
 			phase_ = Phase::kDeath;
 
-			
 			const Vector3& deathParticlesPosition = player_->GetWorldPosition();
 
-			
 			if (deathParticles_) {
 				delete deathParticles_;
 			}
@@ -338,7 +336,7 @@ void GameScene::ChangePhase() {
 		}
 		break;
 	case Phase::kDeath:
-		
+
 		break;
 	}
 }
@@ -356,14 +354,21 @@ void GameScene::CreateHitEffect(const KamataEngine::Vector3& position) {
 ----------------------------*/
 void GameScene::Update() {
 
+	Player::ApplyGlobalVariables();
+	Enemy::ApplyGlobalVariables();
+	ShieldEnemy::ApplyGlobalVariables();
+	CameraController::ApplyGlobalVariables();
+	DeathParticles::ApplyGlobalVariables();
+	GuardEffect::ApplyGlobalVariables();
+	HitEffect::ApplyGlobalVariables();
 
-	#ifdef _DEBUG
-    // リロードボタン
-    //ImGui::Begin("Debug"); 
-    if (ImGui::Button("Reload")) {
-        reloadRequested_ = true;
-    }
-    ImGui::End();
+#ifdef _DEBUG
+	    // リロードボタン
+	    // ImGui::Begin("Debug");
+	    if (ImGui::Button("Reload")) {
+		reloadRequested_ = true;
+	}
+	ImGui::End();
 #endif
 
 	camera_.UpdateMatrix();
@@ -378,7 +383,7 @@ void GameScene::Update() {
 			fade_->Stop();
 		}
 
-		UpdateGamePlayPhase(); 
+		UpdateGamePlayPhase();
 		break;
 
 	case Phase::kPlay:
@@ -393,7 +398,7 @@ void GameScene::Update() {
 		// フェードアウトに移行する
 		if (deathParticles_ && deathParticles_->isFinished_) {
 			phase_ = Phase::kFadeOut;
-			fade_->Start(Fade::Status::FadeOut, 1.0f); 
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
 		}
 		break;
 
@@ -401,10 +406,10 @@ void GameScene::Update() {
 		// フェードアウト処理
 		fade_->Update();
 		if (fade_->IsFinished()) {
-			finished_ = true; 
+			finished_ = true;
 		}
 
-		UpdateDeathPhase(); 
+		UpdateDeathPhase();
 		break;
 	}
 }
@@ -442,9 +447,9 @@ void GameScene::UpdateGamePlayPhase() {
 	});
 
 	enemies_.remove_if([](Enemy* enemy) {
-		if (enemy->IsDead()) { 
-			delete enemy;      
-			return true;       
+		if (enemy->IsDead()) {
+			delete enemy;
+			return true;
 		}
 		return false;
 	});
@@ -492,7 +497,6 @@ void GameScene::UpdateGamePlayPhase() {
 		camera_.TransferMatrix();
 	}
 
-
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -525,8 +529,6 @@ void GameScene::UpdateDeathPhase() {
 		deathParticles_->Update();
 	}
 
-	
-
 	// デバッグカメラの処理とカメラの更新
 	debugCamera_->Update();
 #ifdef _DEBUG
@@ -543,7 +545,6 @@ void GameScene::UpdateDeathPhase() {
 		camera_.matProjection = cameraController_->GetCamera().matProjection;
 		camera_.TransferMatrix();
 	}
-
 
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
@@ -568,8 +569,6 @@ void GameScene::Draw() {
 	if (skydome_) {
 		skydome_->Draw();
 	}
-
-
 
 	if (player_ != nullptr && !player_->isDead_) {
 		player_->Draw();

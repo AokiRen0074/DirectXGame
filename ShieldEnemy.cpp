@@ -32,6 +32,10 @@ void ShieldEnemy::Initialize(KamataEngine::Model* model, KamataEngine::Camera* c
 	velocity_ = {-kWalkSpeed, 0.0f, 0.0f};
 }
 
+void ShieldEnemy::RegisterGlobalVariables() {}
+
+void ShieldEnemy::ApplyGlobalVariables() {}
+
 /*-------------------------------------
 各初期化処理
 --------------------------------*/

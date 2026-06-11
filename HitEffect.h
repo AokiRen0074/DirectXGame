@@ -18,6 +18,9 @@ enum class Phase {
 	void Initialize(const KamataEngine::Vector3& position);
 	void Update();
 	void Draw();
+	// 調整項目を登録
+	static void RegisterGlobalVariables();
+	static void ApplyGlobalVariables();
 
 	bool IsDead() const { return phase_ == Phase::kDead; }
 

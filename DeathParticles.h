@@ -10,6 +10,9 @@ public:
 	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
 	void Update();
 	void Draw();
+	// 調整項目を登録
+	static void RegisterGlobalVariables();
+	static void ApplyGlobalVariables();
 
 	// 終了フラグ
 	bool isFinished_ = false;

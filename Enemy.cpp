@@ -28,6 +28,10 @@ void Enemy::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera,
 	velocity_ = {-kWalkSpeed, 0.0f, 0.0f};
 }
 
+void Enemy::RegisterGlobalVariables() {}
+
+void Enemy::ApplyGlobalVariables() {}
+
 /*-------------------------------------
 各初期化処理
 --------------------------------*/

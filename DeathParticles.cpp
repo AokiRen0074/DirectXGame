@@ -23,6 +23,10 @@ void DeathParticles::Initialize(KamataEngine::Model* model, KamataEngine::Camera
 
 }
 
+void DeathParticles::RegisterGlobalVariables() {}
+
+void DeathParticles::ApplyGlobalVariables() {}
+
 /*----------------------
 更新処理
 ------------------------*/

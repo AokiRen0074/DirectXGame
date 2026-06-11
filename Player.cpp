@@ -33,6 +33,8 @@ static float EaseIn(float start, float end, float t) {
 	return start + (end - start) * easeT;
 }
 
+
+
 /*-----------------------------------
 初期化
 ---------------------------------*/
@@ -58,9 +60,29 @@ void Player::Initialize(KamataEngine::Model* model, KamataEngine::Model* modelAt
 
 	globalVariables->AddItem(groupName, "Test", 90);
 
+	globalVariables->AddItem(groupName, "PlayerAcceleration", kAcceleration);
+	globalVariables->AddItem(groupName, "PlayerJumpAcceleration", kJumpAcceleration);
 
+	ApplyGlobalVariables();
 
 }
+
+/*---------------------------
+項目調整の適応
+---------------------------*/
+
+
+void Player::RegisterGlobalVariables() {}
+
+void Player::ApplyGlobalVariables() {
+	GlobalVariables* globalVariables = GlobalVariables::GetInstance();
+	const char* groupName = "Player";
+
+	kAcceleration = globalVariables->GetFloatValue(groupName, "PlayerAcceleration");
+	kJumpAcceleration = globalVariables->GetFloatValue(groupName, "PlayerJumpAcceleration");
+
+}
+
 
 /*-------------------------------------
 通常行動初期化
@@ -411,6 +433,9 @@ void Player::OnCollision(const Enemy* enemy) {
 更新
 --------------------------------*/
 void Player::Update() {
+
+
+	ApplyGlobalVariables();
 
 	if (isKnockbackRequest_) {
 		behaviorRequest_ = Behavior::kKnockback;
